@@ -1,3 +1,8 @@
+# Notify Tools 0.11.1
+
+- Add `notify activity update --priority high` for visible milestones. Responses report the APNs priority selected; excess milestone requests fall back to normal within per-activity budgets.
+- Explain routine coalescing, independent start/end/interaction priority, and the limits of provider acceptance versus on-screen display.
+
 # Notify Tools 0.11.0
 
 - Upgrade the connector to OpenTunnel 0.5.1 with its reconnect and transient-failure handling, retaining Notify's Cloudflare relay and AWS backend.

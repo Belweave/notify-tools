@@ -101,8 +101,12 @@ export async function handleActivity(context) {
     }
     if (options.subtitle && options["clear-subtitle"])
       throw new UsageError("--subtitle conflicts with --clear-subtitle");
+    const priority = options.priority ?? stdin.priority;
+    if (priority !== undefined && !["normal", "high"].includes(priority))
+      throw new UsageError("--priority must be normal or high");
     const payload = {
       ...stdin,
+      ...(priority !== undefined ? { priority } : {}),
       ...(options.title ? { title: options.title } : {}),
       ...(options.status ? { status: options.status } : {}),
       ...(options.subtitle ? { subtitle: options.subtitle } : {}),

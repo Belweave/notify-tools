@@ -37,6 +37,7 @@ export function parseArgs(argv) {
     "stale-after",
     "dismiss-after",
     "if-sequence",
+    "priority",
     "limit",
     "primary-label",
     "secondary-label",
