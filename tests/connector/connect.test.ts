@@ -277,3 +277,27 @@ describe("pass and callback helpers", () => {
     ).toBe(true);
   });
 });
+
+it("closes the tunnel if connector registration fails", async () => {
+  let closed = 0;
+  await expect(
+    connectInternal({
+      token: "test-only",
+      name: "test",
+      routes: { app: "localhost:3000" },
+      tunnel: {
+        async connect() {
+          return {
+            id: "fixture",
+            hostname: "fixture.clawchest.com",
+            async close() {
+              closed++;
+            },
+          };
+        },
+      },
+      fetch: async () => Response.json({ error: "denied" }, { status: 403 }),
+    }),
+  ).rejects.toThrow("denied");
+  expect(closed).toBe(1);
+});

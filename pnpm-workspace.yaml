@@ -1,2 +1,6 @@
 patchedDependencies:
   '@opentunnel/client@0.4.0': patches/@opentunnel__client@0.4.0.patch
+
+allowBuilds:
+  esbuild: true
+  msgpackr-extract: false

@@ -35,23 +35,29 @@ export async function connectInternal(options: ConnectOptions): Promise<Connecto
     url: tunnelOrigin(session.id, name, domain),
   }));
 
-  const created = await notifyRequest<ConnectorCreatedResponse>(
-    apiUrl,
-    options.token,
-    "/api/agent/connectors",
-    {
-      method: "POST",
-      body: JSON.stringify({
-        name: options.name,
-        tunnelId: session.id,
-        hostname,
-        routes: declared,
-        ...(options.teamId ? { teamId: options.teamId } : {}),
-        ...(options.oncallGroupId ? { oncallGroupId: options.oncallGroupId } : {}),
-      }),
-    },
-    fetchImpl,
-  );
+  let created: { status: number; body: ConnectorCreatedResponse };
+  try {
+    created = await notifyRequest<ConnectorCreatedResponse>(
+      apiUrl,
+      options.token,
+      "/api/agent/connectors",
+      {
+        method: "POST",
+        body: JSON.stringify({
+          name: options.name,
+          tunnelId: session.id,
+          hostname,
+          routes: declared,
+          ...(options.teamId ? { teamId: options.teamId } : {}),
+          ...(options.oncallGroupId ? { oncallGroupId: options.oncallGroupId } : {}),
+        }),
+      },
+      fetchImpl,
+    );
+  } catch (error) {
+    await session.close().catch(() => undefined);
+    throw error;
+  }
 
   const routes = [...created.body.connector.routes];
   if (options.registerApps !== false) {
