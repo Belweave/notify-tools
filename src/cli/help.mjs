@@ -24,7 +24,7 @@ export function help() {
                          [--style <standard|ring|hero|terminal|steps>] [--accent-color <#RRGGBB>]
                          [--device <id>...] [--group <dgrp_id>] [--expires-in <duration>] [--stale-after <duration>]
                          [--replace] [--idempotency-key <key>] [--stdin]
-  notify activity update <id|key> [--title <title>] [--status <status>] [--subtitle <text>|--clear-subtitle] [--detail <text>]
+  notify activity update <id|key> [--priority normal|high] [--title <title>] [--status <status>] [--subtitle <text>|--clear-subtitle] [--detail <text>]
                             [--progress <0..1>] [--symbol <symbol>] [--privacy <standard|private>]
                             [--style <standard|ring|hero|terminal|steps>] [--accent-color <#RRGGBB>]
                             [--stale-after <duration>] [--if-sequence <n>]

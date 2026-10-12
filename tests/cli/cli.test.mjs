@@ -2019,3 +2019,23 @@ test("notify connect accepts PROXY v1/v2 and rejects invalid values before openi
   }
   for (const value of ["v3", "yes", ""]) await assert.rejects(execute(["connect", "3000", "--name", "work", "--proxy-protocol", value], { NOTIFY_TOKEN: "ntf_test" }), /--proxy-protocol (must be v1 or v2|requires a value)/);
 });
+
+test("activity milestone priority is opt-in, validated, and sent unchanged", async () => {
+  const originalFetch = globalThis.fetch;
+  const calls = [];
+  globalThis.fetch = async (_url, init) => {
+    calls.push(JSON.parse(init.body));
+    return Response.json({ accepted: 1, failed: 0, apnsPriority: 10, priorityReason: "milestone" });
+  };
+  try {
+    const env = { NOTIFY_TOKEN: "ntf_test", NOTIFY_API_URL: "https://example.test" };
+    const result = await execute(["activity", "update", "act_1", "--status", "Ready", "--priority", "high"], env);
+    assert.equal(result.body.apnsPriority, 10);
+    assert.equal(result.body.priorityReason, "milestone");
+    assert.deepEqual(calls[0], { status: "Ready", priority: "high" });
+    await execute(["activity", "update", "act_1", "--status", "Routine"], env);
+    assert.equal(Object.hasOwn(calls[1], "priority"), false);
+    await assert.rejects(execute(["activity", "update", "act_1", "--status", "Ready", "--priority", "urgent"], env), /priority must be normal or high/);
+    assert.equal(calls.length, 2);
+  } finally { globalThis.fetch = originalFetch; }
+});
