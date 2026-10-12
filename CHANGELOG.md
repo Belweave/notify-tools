@@ -1,3 +1,12 @@
+# Notify Tools 0.10.0 (unreleased)
+
+- Put every connector route behind Notify pass exchange, durable replay protection, current membership checks, and bounded stream revocation.
+- Keep signed machine callbacks on a separate ingress bound to the saved interaction and route.
+- Require a durable atomic `consumeJti` store in raw pass middleware; missing storage fails closed.
+- Save CLI callback secrets privately for both saved-login and environment-token flows; emit only safe metadata during a running connection.
+- Recognize superseded progress as a successful replay outcome.
+- Replace the previous agent instructions with a new router and eight focused, portable workflow skills.
+
 # Notify Tools 0.9.0
 
 - Public Apache-2.0 toolkit with versioned GitHub release archives and a local installer.

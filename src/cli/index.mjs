@@ -39,6 +39,7 @@ export async function execute(argv, env = process.env, overrides = {}) {
     now: () => Date.now(),
     openBrowser,
     sleep,
+    stdout: (message) => console.log(message),
     stderr: (message) => console.error(message),
     stderrIsTTY: Boolean(process.stderr.isTTY),
     writeConfig,
@@ -76,13 +77,16 @@ export async function execute(argv, env = process.env, overrides = {}) {
 export async function run(argv, env = process.env, overrides = {}) {
   try {
     const result = await execute(argv, env, overrides);
-    if (result.text) console.log(result.body.help);
-    else if (result.output !== undefined) console.log(result.output);
-    else console.log(JSON.stringify(result.body));
+    const stdout = overrides.stdout ?? ((message) => console.log(message));
+    if (!result.outputEmitted) {
+      if (result.text) stdout(result.body.help);
+      else if (result.output !== undefined) stdout(result.output);
+      else stdout(JSON.stringify(result.body));
+    }
     return result.exitCode;
   } catch (error) {
     const message = error instanceof Error ? error.message : "Unexpected error";
-    console.error(message);
+    (overrides.stderr ?? ((value) => console.error(value)))(message);
     if (error instanceof UsageError) return 2;
     if (error instanceof RequestError) {
       if (error.body?.error === "access_denied") return 5;

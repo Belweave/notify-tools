@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { UsageError } from "../foundation/errors.mjs";
-import { writeConnectorSecret } from "../session/credentials.mjs";
+import { configPath, writeConnectorSecret } from "../session/credentials.mjs";
 
 export async function handleConnect(context) {
   const { action, options, config, env, runtime, overrides } = context;
@@ -35,12 +35,20 @@ export async function handleConnect(context) {
       throw error;
     }
     if (handle.callbackSecret) {
-      runtime.stderr(
-        `callbackSecret (shown once): ${handle.callbackSecret}\nStore it to verify HMAC-signed approval callbacks.`,
-      );
-      if (config.source === "file") {
-        await writeConnectorSecret(config.path, handle.connector.id, handle.callbackSecret);
+      let secretPath;
+      try {
+        secretPath = await writeConnectorSecret(
+          config.path ?? configPath(env),
+          handle.connector.id,
+          handle.callbackSecret,
+        );
+      } catch {
+        await handle.close().catch(() => undefined);
+        throw new Error(
+          "Could not save callback signing secret; connector stopped. Fix local storage, reconnect, then run notify connectors rotate-secret <connector_id> to save a replacement secret.",
+        );
       }
+      runtime.stderr(`Callback signing secret saved to ${secretPath}`);
     }
     const body = {
       connector: handle.connector,
@@ -51,14 +59,28 @@ export async function handleConnect(context) {
       await handle.close();
       return { body, exitCode: 0 };
     }
-    await new Promise((resolve) => {
+    try {
+      runtime.stdout(JSON.stringify(body));
+    } catch (error) {
+      await handle.close().catch(() => undefined);
+      throw error;
+    }
+    await new Promise((resolve, reject) => {
+      let stopping = false;
       const stop = () => {
-        void handle.close().then(resolve);
+        if (stopping) return;
+        stopping = true;
+        process.removeListener("SIGINT", stop);
+        process.removeListener("SIGTERM", stop);
+        runtime.signal?.removeEventListener("abort", stop);
+        void handle.close().then(resolve, reject);
       };
       process.once("SIGINT", stop);
       process.once("SIGTERM", stop);
+      runtime.signal?.addEventListener("abort", stop, { once: true });
+      if (runtime.signal?.aborted) stop();
     });
-    return { body, exitCode: 0 };
+    return { body, exitCode: 0, outputEmitted: true };
   }
 
   throw new UsageError("Unknown command. Run notify --help.");

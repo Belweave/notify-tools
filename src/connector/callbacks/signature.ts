@@ -18,6 +18,7 @@ export function verifyCallbackSignature(input: {
   if (!/^\d{10,16}$/.test(input.timestamp)) return false;
   const prefix = `${CALLBACK_SIGNATURE_VERSION}=`;
   if (!input.signature.startsWith(prefix)) return false;
+  if (!/^[a-fA-F0-9]{64}$/.test(input.signature.slice(prefix.length))) return false;
   const expected = signCallbackBody(input.secret, input.timestamp, input.body);
   const expectedBuf = Buffer.from(expected, "hex");
   const providedBuf = Buffer.from(input.signature.slice(prefix.length), "hex");
@@ -25,5 +26,6 @@ export function verifyCallbackSignature(input: {
   if (!timingSafeEqual(expectedBuf, providedBuf)) return false;
   const nowSec = Math.floor((input.now ?? Date.now()) / 1000);
   const skew = input.maxSkewSeconds ?? CALLBACK_MAX_SKEW_SECONDS;
-  return Math.abs(nowSec - Number(input.timestamp)) <= skew;
+  const age = nowSec - Number(input.timestamp);
+  return age >= 0 && age <= skew;
 }

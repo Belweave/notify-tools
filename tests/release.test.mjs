@@ -1,13 +1,14 @@
 import assert from "node:assert/strict";
 import { spawnSync } from "node:child_process";
-import { cp, mkdtemp, readFile, writeFile, mkdir, lstat, readlink, rm } from "node:fs/promises";
-import { join, resolve } from "node:path";
+import { cp, mkdtemp, readFile, writeFile, mkdir, lstat, readlink, rm, realpath } from "node:fs/promises";
+import { dirname, join, resolve, sep } from "node:path";
 import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { generateKeyPair, SignJWT } from "jose";
 
 const source = resolve("dist");
+const releaseVersion = JSON.parse(await readFile(join(source, "manifest.json"), "utf8")).version;
 const compiler = resolve("node_modules/typescript/bin/tsc");
 function node(args, options = {}) {
   return spawnSync(process.execPath, args, { encoding: "utf8", timeout: 15000, ...options });
@@ -18,6 +19,23 @@ test("release runs and typechecks outside the checkout without dependencies", as
   try {
     const release = join(folder, "release");
     await cp(source, release, { recursive: true });
+    const bundle = await realpath(join(release, "skills/notify"));
+    const pending = [join(bundle, "SKILL.md")];
+    const visited = new Set();
+    while (pending.length) {
+      const file = pending.pop();
+      if (visited.has(file)) continue;
+      visited.add(file);
+      const content = await readFile(file, "utf8");
+      for (const [, target] of content.matchAll(/\[[^\]]+\]\(([^)]+)\)/g)) {
+        if (/^[a-z]+:|^#/i.test(target)) continue;
+        const linked = await realpath(resolve(dirname(file), target.split("#")[0]));
+        assert.ok(linked.startsWith(`${bundle}${sep}`), `Skill link escapes release: ${target}`);
+        pending.push(linked);
+      }
+    }
+    assert.ok(visited.size > 1, "Release retains routed workflow skills");
+
     const env = { PATH: process.env.PATH, HOME: folder, XDG_CONFIG_HOME: join(folder, "config") };
     const help = node([join(release, "cli/notify.mjs"), "--help"], { cwd: folder, env });
     assert.equal(help.status, 0, help.stderr);
@@ -123,7 +141,7 @@ test("installer preserves releases, supports spaces, and rejects unrelated binar
       assert.equal(result.status, 0, result.stderr);
     }
     const binary = join(prefix, "bin/notify");
-    assert.match(await readlink(binary), /0\.9\.0\/cli\/notify\.mjs$/);
+    assert.ok((await readlink(binary)).endsWith(`${releaseVersion}/cli/notify.mjs`));
     assert.equal(await readFile(join(previous, "keep"), "utf8"), "earlier release");
     const run = node([binary, "--help"]);
     assert.equal(run.status, 0, run.stderr);

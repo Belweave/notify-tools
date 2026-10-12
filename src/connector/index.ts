@@ -26,3 +26,5 @@ export {
   expressNotifyPass,
   fastifyNotifyPass,
 } from "./passes/http.js";
+
+export type { PassMiddlewareOptions } from "./passes/http.js";

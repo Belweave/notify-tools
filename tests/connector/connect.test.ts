@@ -187,7 +187,8 @@ describe("runConnect", () => {
       },
       tunnel: {
         connect: async (routes) => {
-          expect(routes).toEqual({ grafana: "127.0.0.1:3000" });
+          expect(routes.grafana).toMatch(/^127\.0\.0\.1:\d+$/);
+          expect(routes.grafana).not.toBe("127.0.0.1:3000");
           return {
             id: "idcli0000001",
             hostname: "idcli0000001.clawchest.com",
@@ -234,6 +235,7 @@ describe("pass and callback helpers", () => {
       .setIssuer(issuer)
       .setAudience(audience)
       .setSubject("hk_pair")
+      .setJti("unique-pass-test")
       .setIssuedAt()
       .setExpirationTime("2m")
       .sign(privateKey);
@@ -258,6 +260,7 @@ describe("pass and callback helpers", () => {
     };
     const result = await fastifyNotifyPass({
       audience: "https://grafana.ab12cd34ef56.clawchest.com",
+      consumeJti: async () => true,
     })({ headers: {} }, reply);
     expect(result).toEqual({ status: 401, body: { error: "Unauthorized" } });
     expect(sent).toEqual([{ status: 401, body: { error: "Unauthorized" } }]);
@@ -300,4 +303,17 @@ it("closes the tunnel if connector registration fails", async () => {
     }),
   ).rejects.toThrow("denied");
   expect(closed).toBe(1);
+});
+
+it("rejects malformed HMAC suffixes, expired signatures and future timestamps", () => {
+  const body = '{"ok":true}',
+    timestamp = "1791520000",
+    secret = "test-only";
+  const signature = `v1=${createHmac("sha256", secret).update(`${timestamp}.${body}`).digest("hex")}`;
+  const base = { secret, body, timestamp, now: 1_791_520_000_000 };
+  expect(verifyCallbackSignature({ ...base, signature })).toBe(true);
+  for (const suffix of ["g", "xyz", "00"])
+    expect(verifyCallbackSignature({ ...base, signature: signature + suffix })).toBe(false);
+  expect(verifyCallbackSignature({ ...base, signature, now: base.now + 301_000 })).toBe(false);
+  expect(verifyCallbackSignature({ ...base, signature, now: base.now - 1_000 })).toBe(false);
 });
