@@ -1,0 +1,22 @@
+diff --git a/dist/effect/tunnel.js b/dist/effect/tunnel.js
+index 715c1accb46b33e2cae2f243d9ca817b80f2d4e3..bacb00495cc46a1e77b4118e44542645ed0daedc 100644
+--- a/dist/effect/tunnel.js
++++ b/dist/effect/tunnel.js
+@@ -286,10 +286,13 @@ class Session {
+             this.finish = resolve;
+             const url = new URL(`/api/tunnel/${encodeURIComponent(this.options.identity.id)}/connect`, this.options.api);
+             url.protocol = url.protocol === "https:" ? "wss:" : "ws:";
+-            const socket = new BunWebSocket(url, {
+-                protocols: [BridgeProtocol.WEBSOCKET_SUBPROTOCOL],
+-                headers: { "user-agent": USER_AGENT },
+-            });
++            // Notify Tools compatibility: Node implements the standard WebSocket constructor.
++            const socket = globalThis.Bun
++                ? new BunWebSocket(url, {
++                    protocols: [BridgeProtocol.WEBSOCKET_SUBPROTOCOL],
++                    headers: { "user-agent": USER_AGENT },
++                })
++                : new BunWebSocket(url, [BridgeProtocol.WEBSOCKET_SUBPROTOCOL]);
+             socket.binaryType = "arraybuffer";
+             this.socket = socket;
+             this.attachTimeout = setTimeout(() => this.end({ type: "retry", error: "bridge attach timed out", attached: false }), BridgeProtocol.BridgeTiming.CONNECT_TIMEOUT_MS);

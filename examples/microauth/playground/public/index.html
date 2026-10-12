@@ -1,0 +1,43 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#10232d">
+  <title>microAuth Playground</title>
+  <link rel="icon" href="/icon.svg" type="image/svg+xml">
+  <link rel="stylesheet" href="/style.css">
+  <script type="module" src="/app.js"></script>
+</head>
+<body>
+  <main>
+    <header><img src="/icon.svg" alt="" width="42" height="42"><span>NOTIFY LABS</span></header>
+    <div class="intro"><p class="eyebrow">A LITTLE APP. YOUR CHOICE.</p><h1>Meet<br>microAuth<span>()</span></h1><p class="lead">Sign in with Notify.<br>Share only what you choose.</p></div>
+    <section class="card" id="connect-card" aria-labelledby="connect-heading">
+      <div class="section-heading"><span class="step">01</span><h2 id="connect-heading">Try a connection</h2></div>
+      <p>Choose which details this app may ask for. You’ll review and approve sharing in Notify.</p>
+      <fieldset><legend class="sr-only">Optional details to request</legend>
+        <label><input type="checkbox" name="field" value="name"><span>Display name</span></label>
+        <label><input type="checkbox" name="field" value="email"><span>Email</span></label>
+        <label><input type="checkbox" name="field" value="phone"><span>Phone number</span></label>
+        <label><input type="checkbox" name="field" value="timeZone"><span>Time zone</span></label>
+        <label><input type="checkbox" name="field" value="pronouns"><span>Pronouns</span></label>
+        <label><input type="checkbox" name="field" value="custom"><span>Custom profile fields</span></label>
+      </fieldset>
+      <button id="connect" class="primary" type="button">Connect with Notify <span aria-hidden="true">↗</span></button>
+      <p class="hint">Nothing selected? You can still sign in privately.</p>
+    </section>
+    <section class="card" id="result-card" aria-labelledby="result-heading" hidden>
+      <div class="section-heading"><span class="verified" aria-hidden="true">✓</span><h2 id="result-heading" tabindex="-1">You’re connected</h2></div>
+      <p>This is exactly what the app received after verifying your sign-in.</p>
+      <dl id="shared-fields"></dl>
+      <p id="no-fields" class="hint" hidden>You signed in without sharing profile details.</p>
+      <details><summary>Your identity for this app</summary><p id="subject" class="subject"></p><p class="hint">This identifier is specific to this website.</p></details>
+      <button id="disconnect" class="secondary" type="button">Clear this demo session</button>
+      <p class="hint">The session expires after five minutes. This clears the app’s copy; manage ongoing sharing in Notify’s Access &amp; details.</p>
+    </section>
+    <p id="status" class="status" role="status" aria-live="polite"></p>
+    <footer><span class="dot" aria-hidden="true"></span> Your profile. Your permission.<p>A working microAuth example by Belweave. Open in Notify 1.5.2 (16) or newer.</p></footer>
+  </main>
+</body>
+</html>

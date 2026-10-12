@@ -1,0 +1,29 @@
+# Notify Tools 0.11.0
+
+- Upgrade the connector to OpenTunnel 0.5.1 with its reconnect and transient-failure handling, retaining Notify's Cloudflare relay and AWS backend.
+- Add opt-in per-route PROXY protocol v1/v2 support in the SDK and `notify connect --proxy-protocol v1|v2`. Matching upstream support is required; all traffic continues through the mandatory authenticated gateway.
+- Clarify the computer-hosted app to phone Apps workflow and the connector's in-memory certificate and tunnel lifetime.
+
+# Notify Tools 0.10.1
+
+- Share simultaneous authorization checks and stream rechecks without caching completed access decisions.
+- Send compact liveness heartbeats with bounded timeouts and serialize shutdown after pending online requests.
+
+# Notify Tools 0.10.0
+
+- Put every connector route behind Notify pass exchange, durable replay protection, current membership checks, and bounded stream revocation.
+- Keep signed machine callbacks on a separate ingress bound to the saved interaction and route.
+- Require a durable atomic `consumeJti` store in raw pass middleware; missing storage fails closed.
+- Save CLI callback secrets privately for both saved-login and environment-token flows; emit only safe metadata during a running connection.
+- Recognize superseded progress as a successful replay outcome.
+- Replace the previous agent instructions with a new router and eight focused, portable workflow skills.
+
+# Notify Tools 0.9.0
+
+- Public Apache-2.0 toolkit with versioned GitHub release archives and a local installer.
+- CLI command modules for all Notify resources, browser authentication, and stdin/JSON workflows.
+- microAuth() browser and server SDKs, standalone TypeScript declarations, and a durable Node/SQLite session example.
+- Internal service connector, pass-verification middleware, and callback signature verification.
+- Claude Code, Codex, and OpenCode permission integrations, with modular installation and event handling.
+- Agent skill and focused workflow references.
+- Exact-origin relay authorization, per-connector fetch isolation, and Node WebSocket compatibility.

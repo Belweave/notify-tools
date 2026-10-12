@@ -1,0 +1,10 @@
+patchedDependencies:
+  '@opentunnel/client@0.5.1': patches/@opentunnel__client@0.5.1.patch
+
+allowBuilds:
+  esbuild: true
+  msgpackr-extract: false
+
+minimumReleaseAgeExclude:
+  - '@opentunnel/client@0.5.1'
+  - '@opentunnel/protocol@0.5.1'

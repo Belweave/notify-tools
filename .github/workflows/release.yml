@@ -1,0 +1,31 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: write
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: pnpm/action-setup@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: pnpm
+      - run: pnpm install --frozen-lockfile
+      - name: Match release version
+        run: node --input-type=module -e 'import p from "./package.json" with {type:"json"}; if (process.env.GITHUB_REF_NAME !== `v${p.version}`) process.exit(1)'
+      - run: pnpm check
+      - run: pnpm test:release
+      - run: pnpm release:archive
+      - name: Publish versioned archive
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if gh release view "$GITHUB_REF_NAME" >/dev/null 2>&1; then
+            echo "Release already published; preserving its versioned assets."
+          else
+            gh release create "$GITHUB_REF_NAME" artifacts/release-*/*.tar.gz artifacts/release-*/SHA256SUMS --verify-tag --title "Notify Tools $GITHUB_REF_NAME" --notes-file CHANGELOG.md
+          fi
