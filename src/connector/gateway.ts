@@ -37,6 +37,8 @@ export interface GatewayOptions {
 interface Session {
   pass: string;
   identity: AccessIdentity;
+  checking?: Promise<void>;
+  invalidated?: boolean;
 }
 export interface AccessGateway {
   target: string;
@@ -146,62 +148,84 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
   let origin: URL | undefined;
   const authorize = async (pass: string, consume: boolean) =>
     validateIdentity(await options.authorize(pass, consume));
+  // Share work only while it is in flight; completed authorization is never cached.
+  const revalidate = (session: Session): Promise<void> => {
+    if (session.invalidated || session.identity.expiresAt <= Date.now() / 1000)
+      return Promise.reject(new Error("Access denied"));
+    if (session.checking) return session.checking;
+    session.checking = authorize(session.pass, false)
+      .then((next) => {
+        if (
+          session.invalidated ||
+          session.identity.expiresAt <= Date.now() / 1000 ||
+          next.subject !== session.identity.subject ||
+          next.appId !== session.identity.appId ||
+          next.teamId !== session.identity.teamId ||
+          next.teamRole !== session.identity.teamRole ||
+          next.expiresAt > session.identity.expiresAt
+        )
+          throw new Error("Access denied");
+      })
+      .catch(() => {
+        session.invalidated = true;
+        throw new Error("Access denied");
+      })
+      .finally(() => {
+        session.checking = undefined;
+      });
+    return session.checking;
+  };
   const getSession = async (req: IncomingMessage): Promise<Session> => {
     if (!origin || req.headers.host !== origin.host) throw new Error("Access denied");
     const id = cookieSession(req);
     const session = id ? sessions.get(id) : undefined;
-    if (!session || session.identity.expiresAt <= Date.now() / 1000) {
-      if (id) sessions.delete(id);
-      throw new Error("Access denied");
-    }
+    if (!session) throw new Error("Access denied");
     try {
-      const next = await authorize(session.pass, false);
-      if (
-        next.subject !== session.identity.subject ||
-        next.appId !== session.identity.appId ||
-        next.teamId !== session.identity.teamId ||
-        next.teamRole !== session.identity.teamRole ||
-        next.expiresAt > session.identity.expiresAt
-      )
-        throw new Error("Access denied");
+      await revalidate(session);
       return session;
     } catch {
       if (id) sessions.delete(id);
       throw new Error("Access denied");
     }
   };
+  interface Watchers {
+    streams: Set<{ stream: Duplex }>;
+    timer: ReturnType<typeof setInterval>;
+    expiry: ReturnType<typeof setTimeout>;
+  }
+  const watched = new Map<Session, Watchers>();
   const watch = (session: Session, stream: Duplex) => {
-    let checking = false;
-    const expiry = setTimeout(
-      () => stream.destroy(),
-      Math.max(0, session.identity.expiresAt * 1000 - Date.now()),
-    );
-    const timer = setInterval(
-      () => {
-        if (checking) return;
-        checking = true;
-        void authorize(session.pass, false)
-          .then((identity) => {
-            if (
-              identity.subject !== session.identity.subject ||
-              identity.appId !== session.identity.appId ||
-              identity.teamId !== session.identity.teamId ||
-              identity.teamRole !== session.identity.teamRole
-            )
-              stream.destroy();
-          })
-          .catch(() => stream.destroy())
-          .finally(() => {
-            checking = false;
-          });
-      },
-      Math.min(options.recheckMs ?? 15_000, 15_000),
-    );
-    expiry.unref();
-    timer.unref();
+    let state = watched.get(session);
+    if (!state) {
+      const streams = new Set<{ stream: Duplex }>();
+      const destroy = () => {
+        for (const { stream: active } of streams) active.destroy();
+      };
+      state = {
+        streams,
+        expiry: setTimeout(destroy, Math.max(0, session.identity.expiresAt * 1000 - Date.now())),
+        timer: setInterval(
+          () => {
+            void revalidate(session).catch(destroy);
+          },
+          Math.min(options.recheckMs ?? 15_000, 15_000),
+        ),
+      };
+      state.expiry.unref();
+      state.timer.unref();
+      watched.set(session, state);
+    }
+    const entry = state;
+    const subscription = { stream };
+    entry.streams.add(subscription);
     const cleanup = () => {
-      clearTimeout(expiry);
-      clearInterval(timer);
+      stream.off("close", cleanup);
+      if (!entry.streams.delete(subscription)) return;
+      if (entry.streams.size === 0) {
+        clearTimeout(entry.expiry);
+        clearInterval(entry.timer);
+        watched.delete(session);
+      }
     };
     stream.once("close", cleanup);
     return cleanup;
