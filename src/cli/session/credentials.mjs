@@ -84,10 +84,11 @@ export async function writeConfig(path, config) {
 }
 
 export async function writeConnectorSecret(configPath, connectorId, secret) {
+  if (!/^conn_[A-Za-z0-9_-]+$/.test(connectorId)) throw new Error("Invalid connector identifier");
   const directory = join(dirname(configPath), "connectors");
   await mkdir(directory, { recursive: true, mode: 0o700 });
   const path = join(directory, `${connectorId}.secret`);
-  const temporary = `${path}.${process.pid}.tmp`;
+  const temporary = `${path}.${process.pid}.${randomBytes(8).toString("hex")}.tmp`;
   let handle;
   try {
     handle = await open(temporary, "wx", 0o600);
@@ -98,6 +99,7 @@ export async function writeConnectorSecret(configPath, connectorId, secret) {
     if (platform() !== "win32") await chmod(temporary, 0o600);
     await rename(temporary, path);
     if (platform() !== "win32") await chmod(path, 0o600);
+    return path;
   } catch (error) {
     await handle?.close().catch(() => {});
     await rm(temporary, { force: true }).catch(() => {});

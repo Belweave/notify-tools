@@ -1842,11 +1842,14 @@ test("oncall update keeps unchanged rotation fields, including the original star
   );
 });
 
-test("notify connect PORT --name registers a route", async () => {
+test("notify connect PORT --name registers a route", async (t) => {
+  const directory = await mkdtemp(join(tmpdir(), "notify-connect-"));
+  t.after(() => rm(directory, { recursive: true, force: true }));
+  const configFile = join(directory, "config.json");
   const closed = [];
   const result = await execute(
     ["connect", "3000", "--name", "grafana"],
-    { NOTIFY_TOKEN: "ntf_test", NOTIFY_API_URL: "https://example.test" },
+    { NOTIFY_TOKEN: "ntf_test", NOTIFY_API_URL: "https://example.test", NOTIFY_CONFIG: configFile },
     {
       detach: true,
       connector: {
@@ -1908,7 +1911,8 @@ test("notify connectors rotate-secret calls the rotate route", async () => {
       assert.equal(result.body.connector.id, "conn_server");
       assert.equal(requests[0].path, "/api/agent/connectors/conn_1/rotate-secret");
       assert.equal(requests[0].method, "POST");
-      assert.match(stderr.join("\n"), /ncb_rotated/);
+      assert.doesNotMatch(stderr.join("\n"), /ncb_rotated/);
+      assert.match(stderr.join("\n"), /Callback signing secret saved to/);
       const secretPath = join(directory, "connectors", "conn_server.secret");
       assert.equal((await readFile(secretPath, "utf8")).trim(), "ncb_rotated");
       assert.equal((await stat(secretPath)).mode & 0o777, 0o600);
@@ -1989,4 +1993,15 @@ test("service Family sharing sends explicit share and unshare bodies", async () 
     execute(["services", "share", "svc_1", "--family", "f", "--personal"], AGENT_ENV),
     /exactly one/,
   );
+});
+
+
+test("an idempotent replay of superseded progress is not a delivery failure", async () => {
+  const originalFetch = globalThis.fetch;
+  globalThis.fetch = async () => Response.json({accepted: 0, failed: 0, queued: 0, superseded: 1, idempotent: true, activity: {id: "act_progress", sequence: 3}});
+  try {
+    const result = await execute(["activity", "update", "act_progress", "--status", "Compiling", "--idempotency-key", "compile-event"], {NOTIFY_TOKEN: "ntf_test"});
+    assert.equal(result.exitCode, 0);
+    assert.equal(result.body.superseded, 1);
+  } finally { globalThis.fetch = originalFetch; }
 });

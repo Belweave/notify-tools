@@ -23,7 +23,7 @@ export function interactionExitCode(interaction) {
 export const POLL_TIMEOUT_SECONDS = 20;
 
 export function dispatchExitCode(body) {
-  return body.accepted === 0 && !(typeof body.queued === "number" && body.queued > 0) ? 7 : 0;
+  return body.accepted === 0 && !(typeof body.queued === "number" && body.queued > 0) && !(typeof body.superseded === "number" && body.superseded > 0) ? 7 : 0;
 }
 
 export async function waitForInteraction(config, id, timeoutSeconds, runtime) {

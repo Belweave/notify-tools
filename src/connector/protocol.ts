@@ -4,6 +4,10 @@ export const DEFAULT_RELAY_DOMAIN = "clawchest.com";
 export const APP_PASS_ALGORITHM = "ES256";
 export const APP_PASS_JWKS_PATH = "/.well-known/jwks.json";
 export const APP_PASS_JWT_TYPE = "notify-pass+jwt";
+export const APP_PASS_TTL_SECONDS = 120;
+export const TEAM_ROLES = ["owner", "admin", "member"] as const;
+export const CALLBACK_TIMESTAMP_HEADER = "notify-timestamp";
+export const CALLBACK_SIGNATURE_HEADER = "notify-signature";
 export const CALLBACK_SIGNATURE_VERSION = "v1";
 export const CALLBACK_MAX_SKEW_SECONDS = 300;
 export interface ConnectorRoute {
@@ -11,6 +15,7 @@ export interface ConnectorRoute {
   target: string;
   url: string;
   appId?: string;
+  enabled?: boolean;
 }
 export interface ConnectorDto {
   id: string;
@@ -18,6 +23,7 @@ export interface ConnectorDto {
   tunnelId: string;
   hostname: string;
   routes: ConnectorRoute[];
+  enabled?: boolean;
   status: "online" | "offline" | "unknown";
   lastSeenAt: string | null;
   teamId: string | null;

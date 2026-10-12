@@ -1,11 +1,26 @@
 // SPDX-License-Identifier: Apache-2.0
+export function secureControlOrigin(url: string): string {
+  const parsed = new URL(url);
+  const loopback = ["127.0.0.1", "[::1]"].includes(parsed.hostname);
+  if (
+    parsed.username ||
+    parsed.password ||
+    (parsed.protocol !== "https:" && !(parsed.protocol === "http:" && loopback))
+  ) {
+    throw new Error(
+      "Notify and relay control URLs require HTTPS (HTTP is allowed only on loopback)",
+    );
+  }
+  return parsed.origin;
+}
+
 /** Add credentials only to this relay's exact tunnel-creation endpoint. */
 export function authorizeRelayCreate(
   relayApi: string,
   token: string,
   send: typeof fetch = globalThis.fetch,
 ): typeof fetch {
-  const allowedOrigin = new URL(relayApi).origin;
+  const allowedOrigin = secureControlOrigin(relayApi);
   return (input, init) => {
     const source = input instanceof Request ? input : undefined;
     const address = source?.url ?? String(input);
