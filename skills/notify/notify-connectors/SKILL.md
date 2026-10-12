@@ -5,7 +5,7 @@ description: Publish an internal HTTP service through a Notify connector with au
 
 # Connect a running service
 
-Confirm the local service and intended workspace. The connector process must remain running:
+Confirm the local service and intended workspace. Run the app and the Notify CLI on the computer that hosts the service; keep both processes running. On the phone, open Apps in Notify and select the registered app:
 
 ```sh
 notify connect 3000 --name dashboard --team team_SELECTED_ID
@@ -14,6 +14,20 @@ notify connect 3000 --name dashboard --team team_SELECTED_ID
 Omit `--team` for personal use. `--name` is a DNS route label, not a display sentence. The SDK exposes `connectInternal` from the release's `sdk/connector.mjs` with `token`, `name`, `routes`, and optional `teamId`; retain the returned handle and close it during shutdown. Creating or changing a team connector requires current admin or owner authority.
 
 Use a private credential source for `NOTIFY_TOKEN`. CLI 0.10.0 and later saves callback signing secrets to a private mode-0600 file and reports only its path, including when authentication comes from the environment. SDK creation or rotation can return a secret once; persist it directly in protected storage. Older CLI releases printed it to stderr: use the updated CLI or a protected SDK runner before starting an agent-owned connector. Read the returned connector and route metadata to report the registered URL and app ID. Do not claim success until registration and the local service are reachable through the intended path.
+
+## Optional transport metadata
+
+OpenTunnel 0.5.1 adds `notify connect PORT --name NAME --proxy-protocol v1|v2`.
+This is off by default: enable it only after confirming the exact upstream listener
+accepts that PROXY version before HTTP, or before TLS for HTTPS. In the SDK, use
+`{ target: "127.0.0.1:3000", proxyProtocol: "v2" }` as that route's value; string
+routes remain supported. Ordinary web servers should omit the option.
+
+The mandatory gateway still authorizes the user session or signed callback before
+sending a preamble on a new upstream connection. Relay-supplied socket addresses
+are network metadata, not identity and not trusted browser forwarding headers.
+The connector retains tunnel/certificate state only in memory; restarting does
+not restore a persisted tunnel identity or certificate.
 
 ## Preserve the gateway boundary
 

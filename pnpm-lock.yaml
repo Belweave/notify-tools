@@ -5,7 +5,7 @@ settings:
   excludeLinksFromLockfile: false
 
 patchedDependencies:
-  '@opentunnel/client@0.4.0': c30948816037bed9bdde99b43dcea8752b95e48053bdbec7c27ee6dd2bb5e492
+  '@opentunnel/client@0.5.1': 4e61a8ff11aa144a0e51b7fab4309dff6ea8b8a3084c32c593d374accefaa844
 
 importers:
 
@@ -15,8 +15,8 @@ importers:
         specifier: 0.0.0-next-16562
         version: 0.0.0-next-16562(effect@4.0.2)
       '@opentunnel/client':
-        specifier: 0.4.0
-        version: 0.4.0(patch_hash=c30948816037bed9bdde99b43dcea8752b95e48053bdbec7c27ee6dd2bb5e492)(effect@4.0.2)
+        specifier: 0.5.1
+        version: 0.5.1(patch_hash=4e61a8ff11aa144a0e51b7fab4309dff6ea8b8a3084c32c593d374accefaa844)(effect@4.0.2)
       effect:
         specifier: 4.0.2
         version: 4.0.2
@@ -242,14 +242,14 @@ packages:
   '@opencode-ai/schema@0.0.0-next-16562':
     resolution: {integrity: sha512-xhhog1VnpABwtftnjEGX16uS94oj6HCj+qAFCF3qwJ9685usKBltMRTTAq5Pk/okJ4Lgjat92qwpn8vCtL47Pg==}
 
-  '@opentunnel/client@0.4.0':
-    resolution: {integrity: sha512-Y6UiO/ouJ/vtdIy4QmCTRY2DPTRpHy2+jR0F6+AKXoD57ozd8W9ZTTP2J1KDqTb7ZfJmRTuqtx1ZR2TnejlZGQ==}
+  '@opentunnel/client@0.5.1':
+    resolution: {integrity: sha512-TdrdD0RCgX5vGRjLEKAsPD0vshUdjJEIUr7KEmJA3wmgbmRj5TQSHO66AMWF6REhd7UJ2ZnYQ3XNjqgnT+ghfQ==}
     engines: {bun: '>=1.4.0', node: '>=22'}
     peerDependencies:
       effect: ^4.0.0
 
-  '@opentunnel/protocol@0.4.0':
-    resolution: {integrity: sha512-rxmfgJ5O1EYxgzawkOti9DyiM44l0Bkeue5KuHpCFaPAP2n9i4xDYCU8XQp9WAEFt7ifZZqI9giOyzJE61faaA==}
+  '@opentunnel/protocol@0.5.1':
+    resolution: {integrity: sha512-8DIZNyDxEFyzl6WzVB/M7hZauCU+zFABo0iviywj6kX3yO9jFSPzqWCBBaarpjWJEOXYXaSILllJI62fSlEdeA==}
     peerDependencies:
       effect: ^4.0.0
 
@@ -843,12 +843,12 @@ snapshots:
       '@standard-schema/spec': 1.1.0
       effect: 4.0.0-beta.101
 
-  '@opentunnel/client@0.4.0(patch_hash=c30948816037bed9bdde99b43dcea8752b95e48053bdbec7c27ee6dd2bb5e492)(effect@4.0.2)':
+  '@opentunnel/client@0.5.1(patch_hash=4e61a8ff11aa144a0e51b7fab4309dff6ea8b8a3084c32c593d374accefaa844)(effect@4.0.2)':
     dependencies:
-      '@opentunnel/protocol': 0.4.0(effect@4.0.2)
+      '@opentunnel/protocol': 0.5.1(effect@4.0.2)
       effect: 4.0.2
 
-  '@opentunnel/protocol@0.4.0(effect@4.0.2)':
+  '@opentunnel/protocol@0.5.1(effect@4.0.2)':
     dependencies:
       effect: 4.0.2
 

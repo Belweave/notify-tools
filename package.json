@@ -1,6 +1,6 @@
 {
   "name": "notify-tools",
-  "version": "0.10.1",
+  "version": "0.11.0",
   "private": true,
   "type": "module",
   "license": "Apache-2.0",
@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@opencode-ai/client": "0.0.0-next-16562",
-    "@opentunnel/client": "0.4.0",
+    "@opentunnel/client": "0.5.1",
     "effect": "4.0.2",
     "jose": "6.2.4"
   },

@@ -9,12 +9,12 @@ The command line, microAuth() SDK, service connector, and coding-agent integrati
 Requires **Node.js 22.13 or newer**. Download the archive and checksum file for the exact release, verify them, then inspect and run the installer. No npm packages need to be installed.
 
 ```sh
-curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.10.0/notify-tools-0.10.0.tar.gz
-curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.10.0/SHA256SUMS
+curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.11.0/notify-tools-0.11.0.tar.gz
+curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.11.0/SHA256SUMS
 shasum -a 256 -c SHA256SUMS
-mkdir notify-tools-0.10.0
-tar -xzf notify-tools-0.10.0.tar.gz -C notify-tools-0.10.0
-cd notify-tools-0.10.0
+mkdir notify-tools-0.11.0
+tar -xzf notify-tools-0.11.0.tar.gz -C notify-tools-0.11.0
+cd notify-tools-0.11.0
 node install.mjs --dry-run
 node install.mjs
 export PATH="$HOME/.local/bin:$PATH"
@@ -97,6 +97,41 @@ repeat it on shutdown. If saving a newly issued secret fails, the connector
 stops. Fix storage, reconnect, then use `notify connectors rotate-secret <id>`
 to save a replacement: reconnecting alone may reuse the connector without
 returning its original secret again.
+
+### OpenTunnel 0.5.1 options
+
+Run the web app and `notify connect` on your computer, keep both running, then
+open the registered app from **Apps** in Notify on your phone. Sensitive apps
+still pass through the mandatory access gateway described below.
+
+Ordinary HTTP servers need no extra flags. Only enable PROXY protocol when the
+configured upstream listener explicitly supports it:
+
+```sh
+notify connect 3000 --name dashboard --proxy-protocol v2
+```
+
+`--proxy-protocol` accepts `v1` or `v2` and is off by default. The SDK accepts a
+per-route object alongside existing string routes:
+
+```ts
+routes: {
+  dashboard: { target: "127.0.0.1:3000", proxyProtocol: "v2" },
+}
+```
+
+The upstream must consume the matching PROXY preamble before HTTP, or before
+TLS for an HTTPS target. Enabling it for a normal web server breaks that route.
+The gateway consumes transport metadata, authorizes the session or signed
+callback, and only then sends a PROXY preamble on a new upstream connection.
+It never forwards unauthenticated traffic. Visitor addresses originate from
+the relay socket, not caller-supplied HTTP forwarding headers; they are network
+metadata, not an authorization identity.
+
+The 0.5.1 client brings reconnect and transient-failure handling. Notify keeps its
+Cloudflare relay and AWS backend. Tunnel and certificate state remain in memory
+for the connector's lifetime; no persistent identity or certificate reuse across
+restarts is configured.
 
 ### Mandatory access gateway
 
@@ -224,7 +259,7 @@ the relay's public TCP endpoint and does not listen for incoming connections.
 Public relay servers are necessarily inbound listeners; this is separate from
 the employer connector and the phone.
 
-In the pinned OpenTunnel 0.4.0 client, the connector generates its private key
+In the pinned OpenTunnel 0.5.1 client, the connector generates its private key
 locally and submits a CSR. Phone TLS bytes pass through the TCP relay and Worker
 bridge to the connector, where TLS terminates before the loopback access gateway.
 The gateway connects to the explicitly configured HTTP or HTTPS employer

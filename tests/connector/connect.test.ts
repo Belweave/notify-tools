@@ -375,3 +375,68 @@ it("sends compact non-overlapping heartbeats and finishes online work before gra
     vi.useRealTimers();
   }
 });
+
+it("routes PROXY-enabled connections through the access gateway and keeps Notify metadata as target strings", async () => {
+  const upstream = "127.0.0.1:3000";
+  let registered: { routes: Array<{ target: string }> } | undefined;
+  const handle = await connectInternal({
+    name: "work",
+    token: "test",
+    routes: { work: { target: upstream, proxyProtocol: "v2" } },
+    registerApps: false,
+    fetch: async (input, init) => {
+      if (String(input).endsWith("/api/agent/connectors")) {
+        registered = JSON.parse(String(init?.body));
+        return Response.json({ connector: { ...registered, id: "conn_fixture" } }, { status: 201 });
+      }
+      return Response.json({ ok: true });
+    },
+    tunnel: {
+      connect: async (routes) => {
+        expect(routes.work).toMatchObject({ proxyProtocol: "v2" });
+        expect(typeof routes.work).toBe("object");
+        const route = routes.work as { target: string };
+        expect(route.target).toMatch(/^127\.0\.0\.1:\d+$/);
+        expect(route.target).not.toBe(upstream);
+        return { id: "fixture", hostname: "fixture.clawchest.com", close: async () => {} };
+      },
+    },
+  });
+  try {
+    expect(registered?.routes[0]?.target).toBe(upstream);
+  } finally {
+    await handle.close();
+  }
+});
+
+it("keeps concurrent credentials scoped across SDK 0.5.1 transient creation retries", async () => {
+  const original = globalThis.fetch;
+  const counts = new Map<string, number>();
+  const send: typeof fetch = async (input, init) => {
+    const req = new Request(input, init);
+    expect(req.url).toBe("https://relay.example/api/tunnel");
+    expect(globalThis.fetch).toBe(original);
+    const credential = req.headers.get("authorization") ?? "";
+    expect(["Bearer alpha", "Bearer beta"]).toContain(credential);
+    const count = (counts.get(credential) ?? 0) + 1;
+    counts.set(credential, count);
+    return Response.json(
+      { error: "fixture" },
+      { status: count === 1 ? 503 : 403, headers: { "retry-after": "0" } },
+    );
+  };
+  const result = await Promise.allSettled(
+    ["alpha", "beta"].map((token) =>
+      connectInternal({
+        token,
+        name: "test",
+        routes: { work: "127.0.0.1:3000" },
+        relayApi: "https://relay.example",
+        fetch: send,
+      }),
+    ),
+  );
+  expect(result.every((item) => item.status === "rejected")).toBe(true);
+  expect([...counts.values()]).toEqual([2, 2]);
+  expect(globalThis.fetch).toBe(original);
+});

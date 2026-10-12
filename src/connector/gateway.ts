@@ -9,6 +9,7 @@ import {
 import { request as httpsRequest } from "node:https";
 import type { Duplex } from "node:stream";
 import { CALLBACK_SIGNATURE_HEADER, CALLBACK_TIMESTAMP_HEADER } from "./protocol.js";
+import { consumeProxyHeader, type ProxyProtocol, proxyUpstreamAgent } from "./proxy-protocol.js";
 
 const COOKIE = "__Host-notify_session";
 const EXCHANGE = "/.notify/session";
@@ -23,6 +24,7 @@ export interface AccessIdentity {
 }
 export interface GatewayOptions {
   target: string;
+  proxyProtocol?: ProxyProtocol;
   routeName: string;
   authorize: (pass: string, consume: boolean) => Promise<AccessIdentity>;
   /** Dedicated signed machine delivery, never an alternate user authentication path. */
@@ -143,6 +145,19 @@ function validateIdentity(value: AccessIdentity): AccessIdentity {
 /** Every tunnel factory receives this loopback gateway, never the raw upstream. */
 export async function createAccessGateway(options: GatewayOptions): Promise<AccessGateway> {
   const target = parseTarget(options.target);
+  if (
+    options.proxyProtocol !== undefined &&
+    options.proxyProtocol !== "v1" &&
+    options.proxyProtocol !== "v2"
+  )
+    throw Error("Invalid proxyProtocol");
+  const proxyHeaders = new WeakMap<Duplex, Buffer>();
+  const upstreamAgent = (req: IncomingMessage) => {
+    if (!options.proxyProtocol) return undefined;
+    const header = proxyHeaders.get(req.socket);
+    if (!header) throw Error("Missing verified PROXY header");
+    return proxyUpstreamAgent(target, header);
+  };
   const sessions = new Map<string, Session>();
   const sockets = new Set<Duplex>();
   let origin: URL | undefined;
@@ -306,6 +321,7 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
         const upstream = (target.protocol === "https:" ? httpsRequest : httpRequest)(
           {
             hostname: target.hostname,
+            agent: upstreamAgent(req),
             port: target.port,
             method: "POST",
             path: approved.path,
@@ -392,6 +408,7 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
     const upstream = (target.protocol === "https:" ? httpsRequest : httpRequest)(
       {
         hostname: target.hostname,
+        agent: upstreamAgent(req),
         port: target.port,
         path: req.url,
         method: req.method,
@@ -444,6 +461,7 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
     watch(session, socket);
     const upstream = (target.protocol === "https:" ? httpsRequest : httpRequest)({
       hostname: target.hostname,
+      agent: upstreamAgent(req),
       port: target.port,
       method: "GET",
       path: req.url,
@@ -483,6 +501,20 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
     socket.once("close", () => upstream.destroy());
     upstream.end();
   });
+  const proxyProtocol = options.proxyProtocol;
+  if (proxyProtocol) {
+    // Keep the HTTP server's real listen lifecycle (including its header/request
+    // timeout tracker), but defer attaching its parser until the preamble ends.
+    const httpListeners = server.listeners("connection");
+    server.removeAllListeners("connection");
+    server.on("connection", (socket) => {
+      socket.on("error", () => socket.destroy());
+      consumeProxyHeader(socket, proxyProtocol, (header) => {
+        proxyHeaders.set(socket, header);
+        for (const listener of httpListeners) listener.call(server, socket);
+      });
+    });
+  }
   server.on("connection", (socket) => {
     sockets.add(socket);
     socket.once("close", () => sockets.delete(socket));
