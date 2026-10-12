@@ -22,3 +22,5 @@ jobs:
       - run: pnpm install --frozen-lockfile
       - run: pnpm check
       - run: pnpm test:release
+      - run: pnpm exec vitest run --config examples/microauth/playground/vitest.config.mjs
+      - run: node examples/microauth/playground/build.mjs
