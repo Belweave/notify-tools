@@ -2,7 +2,7 @@ import { createHmac } from "node:crypto";
 import { createServer } from "node:http";
 import { APP_PASS_ALGORITHM, APP_PASS_JWT_TYPE } from "../../src/connector/protocol.js";
 import { exportJWK, generateKeyPair, SignJWT } from "jose";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { connectInternal, installRelayCreateAuth, runConnect } from "../../src/connector/index";
 import { verifyCallbackSignature } from "../../src/connector/index";
 import { fastifyNotifyPass, verifyNotifyPass } from "../../src/connector/index";
@@ -316,4 +316,62 @@ it("rejects malformed HMAC suffixes, expired signatures and future timestamps", 
     expect(verifyCallbackSignature({ ...base, signature: signature + suffix })).toBe(false);
   expect(verifyCallbackSignature({ ...base, signature, now: base.now + 301_000 })).toBe(false);
   expect(verifyCallbackSignature({ ...base, signature, now: base.now - 1_000 })).toBe(false);
+});
+
+it("sends compact non-overlapping heartbeats and finishes online work before graceful shutdown", async () => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+  const beats: Array<{ body: unknown; signal: AbortSignal | null | undefined }> = [];
+  let finishOnline: (() => void) | undefined;
+  let handle: Awaited<ReturnType<typeof connectInternal>> | undefined;
+  try {
+    handle = await connectInternal({
+      token: "fixture-token",
+      name: "work",
+      routes: { work: "127.0.0.1:3000" },
+      registerApps: false,
+      fetch: async (input, init) => {
+        const body = JSON.parse(String(init?.body));
+        if (String(input).endsWith("/heartbeat")) {
+          beats.push({ body, signal: init?.signal });
+          if (body.status === "online")
+            await new Promise<void>((resolve) => {
+              finishOnline = resolve;
+            });
+          return Response.json({ ok: true });
+        }
+        return Response.json({ connector: { id: "conn_heartbeat", ...body } }, { status: 201 });
+      },
+      tunnel: {
+        connect: async () => ({
+          id: "fixture",
+          hostname: "fixture.clawchest.com",
+          close: async () => {},
+        }),
+      },
+    });
+    await vi.advanceTimersByTimeAsync(90_000);
+    expect(beats).toHaveLength(1);
+    expect(beats[0]?.body).toEqual({ status: "online" });
+    expect(beats[0]?.signal).toBeInstanceOf(AbortSignal);
+    finishOnline?.();
+    await vi.advanceTimersByTimeAsync(30_000);
+    expect(beats).toHaveLength(2);
+    const closing = handle.close();
+    expect(beats).toHaveLength(2);
+    finishOnline?.();
+    await closing;
+    handle = undefined;
+    expect(beats.map((beat) => beat.body)).toEqual([
+      { status: "online" },
+      { status: "online" },
+      { status: "offline", graceful: true },
+    ]);
+    expect(beats.every((beat) => beat.signal instanceof AbortSignal)).toBe(true);
+    await vi.advanceTimersByTimeAsync(90_000);
+    expect(beats).toHaveLength(3);
+  } finally {
+    finishOnline?.();
+    await handle?.close();
+    vi.useRealTimers();
+  }
 });

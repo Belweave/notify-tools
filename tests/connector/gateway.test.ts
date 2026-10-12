@@ -1,12 +1,13 @@
 import { createServer, type IncomingHttpHeaders, request } from "node:http";
 import { connect } from "node:net";
-import { afterEach, expect, it } from "vitest";
-import { type AccessIdentity, createAccessGateway } from "../../src/connector/gateway.js";
+import { afterEach, expect, it, vi } from "vitest";
+import { type AccessIdentity, createAccessGateway } from "../../src/connector/gateway";
 
 const cleanup: Array<() => Promise<unknown>> = [];
 afterEach(async () => {
   for (const close of cleanup.reverse()) await close();
   cleanup.length = 0;
+  vi.useRealTimers();
 });
 const origin = "https://work.tunnel.clawchest.com";
 const callbackBody = JSON.stringify({ interactionId: "int_callback", answer: "yes" });
@@ -16,9 +17,14 @@ const callbackHeaders = {
   "notify-timestamp": "1791840000",
   "notify-signature": callbackSignature,
 };
-async function setup(recheckMs = 20, callbackPath = "/approval-receiver") {
+async function setup(
+  recheckMs = 20,
+  callbackPath = "/approval-receiver",
+  onCheck?: (pass: string) => Promise<void>,
+) {
   let hits = 0,
     upgrades = 0,
+    checks = 0,
     revoked = false;
   let received: IncomingHttpHeaders = {};
   let receivedPath: string | undefined,
@@ -78,9 +84,13 @@ async function setup(recheckMs = 20, callbackPath = "/approval-receiver") {
       return { path: callbackPath };
     },
     authorize: async (pass, consume) => {
+      if (!consume) {
+        checks++;
+        await onCheck?.(pass);
+      }
       if (
         revoked ||
-        pass !== "signed-pass" ||
+        !["signed-pass", "signed-pass-second"].includes(pass) ||
         (consume && used.has(pass)) ||
         (!consume && !used.has(pass))
       )
@@ -116,17 +126,17 @@ async function setup(recheckMs = 20, callbackPath = "/approval-receiver") {
         req.end(body);
       },
     );
-  const exchange = () =>
+  const exchange = (pass = "signed-pass") =>
     call(
       "/.notify/session",
       { origin, "content-type": "application/json" },
-      JSON.stringify({ pass: "signed-pass" }),
+      JSON.stringify({ pass }),
     );
   return {
     gateway,
     call,
     exchange,
-    counts: () => ({ hits, upgrades }),
+    counts: () => ({ hits, upgrades, checks }),
     received: () => received,
     receivedCallback: () => ({ path: receivedPath, body: receivedBody }),
     revoke: () => {
@@ -311,4 +321,61 @@ it("rejects an invalid backend callback destination and oversized callback bodie
     .catch(() => ({ status: 0 }));
   expect([0, 401]).toContain(large.status);
   expect(env.counts().hits).toBe(0);
+});
+
+it("coalesces concurrent session checks without caching completed authorization", async () => {
+  let release!: () => void;
+  let pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const env = await setup(15_000, "/approval-receiver", () => pending);
+  env.gateway.setOrigin(origin);
+  const cookie = (await env.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  const requests = Array.from({ length: 6 }, (_, index) => env.call(`/asset-${index}`, { cookie }));
+  await vi.waitFor(() => expect(env.counts().checks).toBe(1));
+  expect(env.counts().hits).toBe(0);
+  release();
+  expect((await Promise.all(requests)).map((result) => result.status)).toEqual(Array(6).fill(200));
+  expect(env.counts().checks).toBe(1);
+  expect((await env.call("/later", { cookie })).status).toBe(200);
+  expect(env.counts().checks).toBe(2);
+
+  // A distinct browser session must never inherit another session's in-flight result.
+  const otherCookie =
+    (await env.exchange("signed-pass-second")).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const separate = [env.call("/first", { cookie }), env.call("/second", { cookie: otherCookie })];
+  await vi.waitFor(() => expect(env.counts().checks).toBe(4));
+  env.revoke();
+  release();
+  expect((await Promise.all(separate)).map((result) => result.status)).toEqual([401, 401]);
+  expect((await env.call("/revoked", { cookie })).status).toBe(401);
+  expect(env.counts().hits).toBe(7);
+});
+
+it("checks all streams in a session once per interval and closes every stream on revocation", async () => {
+  vi.useFakeTimers({ toFake: ["setInterval", "clearInterval"] });
+  const env = await setup(15_000);
+  env.gateway.setOrigin(origin);
+  const cookie = (await env.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  const streams = [];
+  for (let index = 0; index < 3; index++) {
+    const stream = ws(env.gateway.target, cookie);
+    expect(await stream.response).toContain("101");
+    streams.push(stream);
+  }
+  expect(env.counts().checks).toBe(3);
+  await vi.advanceTimersByTimeAsync(15_000);
+  expect(env.counts().checks).toBe(4);
+  const closed = streams.map(
+    ({ socket }) => new Promise<void>((resolve) => socket.once("close", () => resolve())),
+  );
+  env.revoke();
+  await vi.advanceTimersByTimeAsync(15_000);
+  await Promise.all(closed);
+  expect(env.counts().checks).toBe(5);
+  await vi.advanceTimersByTimeAsync(15_000);
+  expect(env.counts().checks).toBe(5);
 });

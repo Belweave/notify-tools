@@ -1,4 +1,9 @@
-# Notify Tools 0.10.0 (unreleased)
+# Notify Tools 0.10.1
+
+- Share simultaneous authorization checks and stream rechecks without caching completed access decisions.
+- Send compact liveness heartbeats with bounded timeouts and serialize shutdown after pending online requests.
+
+# Notify Tools 0.10.0
 
 - Put every connector route behind Notify pass exchange, durable replay protection, current membership checks, and bounded stream revocation.
 - Keep signed machine callbacks on a separate ingress bound to the saved interaction and route.

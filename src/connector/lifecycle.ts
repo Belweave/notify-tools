@@ -150,22 +150,28 @@ export async function connectInternal(options: ConnectOptions): Promise<Connecto
     }
 
     const heartbeatMs = options.heartbeatMs ?? 30_000;
+    let heartbeat: Promise<void> | undefined;
     const timer = setInterval(() => {
-      void notifyRequest(
+      if (heartbeat) return;
+      heartbeat = notifyRequest(
         apiUrl,
         options.token,
         `/api/agent/connectors/${created.body.connector.id}/heartbeat`,
         {
           method: "POST",
-          body: JSON.stringify({
-            status: "online",
-            tunnelId: activeSession.id,
-            hostname,
-            routes,
-          }),
+          // Registration saves metadata; heartbeats report liveness only.
+          body: JSON.stringify({ status: "online" }),
+          signal: AbortSignal.timeout(5_000),
         },
         fetchImpl,
-      ).catch(() => undefined);
+      )
+        .then(
+          () => undefined,
+          () => undefined,
+        )
+        .finally(() => {
+          heartbeat = undefined;
+        });
     }, heartbeatMs);
     timer.unref();
 
@@ -176,6 +182,8 @@ export async function connectInternal(options: ConnectOptions): Promise<Connecto
       routes,
       close: async () => {
         clearInterval(timer);
+        // Finish any bounded online request before reporting graceful shutdown.
+        await heartbeat;
         await notifyRequest(
           apiUrl,
           options.token,
@@ -183,6 +191,7 @@ export async function connectInternal(options: ConnectOptions): Promise<Connecto
           {
             method: "POST",
             body: JSON.stringify({ status: "offline", graceful: true }),
+            signal: AbortSignal.timeout(5_000),
           },
           fetchImpl,
         ).catch(() => undefined);
