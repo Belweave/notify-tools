@@ -13,6 +13,9 @@ export async function handleConnect(context) {
     if (!/^(@|[a-z0-9](?:[a-z0-9-]{0,61}[a-z0-9])?)$/.test(options.name)) {
       throw new UsageError("--name must be a DNS label or @");
     }
+    if (options["proxy-protocol"] !== undefined && !["v1", "v2"].includes(options["proxy-protocol"])) {
+      throw new UsageError("--proxy-protocol must be v1 or v2");
+    }
     const connector = overrides.connector ?? (await import("../../connector/index.ts"));
     let handle;
     try {
@@ -20,7 +23,9 @@ export async function handleConnect(context) {
         token: config.token,
         apiUrl: config.apiUrl,
         name: options.name,
-        routes: { [options.name]: `${options.host ?? "127.0.0.1"}:${port}` },
+        routes: { [options.name]: options["proxy-protocol"]
+          ? { target: `${options.host ?? "127.0.0.1"}:${port}`, proxyProtocol: options["proxy-protocol"] }
+          : `${options.host ?? "127.0.0.1"}:${port}` },
         teamId: options.team,
         relayDomain: env.NOTIFY_RELAY_DOMAIN,
         fetch: overrides.fetch ?? globalThis.fetch,

@@ -63,6 +63,7 @@ export function parseArgs(argv) {
     "body",
     "dedup-key",
     "host",
+    "proxy-protocol",
     "note",
     "oncall",
     "group",

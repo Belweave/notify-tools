@@ -1,6 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
 import { relayApiOrigin, DEFAULT_RELAY_DOMAIN } from "../protocol.js";
-import type { ConnectOptions, TunnelSession } from "../types.js";
+import type { ConnectorRouteTarget, ConnectOptions, TunnelSession } from "../types.js";
 import { Effect, Exit, Layer, ManagedRuntime, Scope } from "effect";
 import { FetchHttpClient } from "effect/http";
 import { OpenTunnelClient, OpenTunnelStorage } from "@opentunnel/client/effect";
@@ -9,7 +9,7 @@ import { authorizeRelayCreate } from "./authorization.js";
 /** Each tunnel owns its transport, credentials, and cleanup scope. */
 export async function defaultTunnelFactory(
   options: ConnectOptions,
-  routes: Record<string, string>,
+  routes: Record<string, ConnectorRouteTarget>,
   fetchImpl: typeof fetch,
 ): Promise<TunnelSession> {
   const relayApi = options.relayApi ?? relayApiOrigin(options.relayDomain ?? DEFAULT_RELAY_DOMAIN);

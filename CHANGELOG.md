@@ -1,3 +1,9 @@
+# Notify Tools 0.11.0
+
+- Upgrade the connector to OpenTunnel 0.5.1 with its reconnect and transient-failure handling, retaining Notify's Cloudflare relay and AWS backend.
+- Add opt-in per-route PROXY protocol v1/v2 support in the SDK and `notify connect --proxy-protocol v1|v2`. Matching upstream support is required; all traffic continues through the mandatory authenticated gateway.
+- Clarify the computer-hosted app to phone Apps workflow and the connector's in-memory certificate and tunnel lifetime.
+
 # Notify Tools 0.10.1
 
 - Share simultaneous authorization checks and stream rechecks without caching completed access decisions.

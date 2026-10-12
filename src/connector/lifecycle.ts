@@ -9,7 +9,7 @@ import {
 import { notifyRequest } from "./transport/notify.js";
 import { defaultTunnelFactory } from "./transport/tunnel.js";
 import { secureControlOrigin } from "./transport/authorization.js";
-import type { ConnectOptions, ConnectorHandle, TunnelSession } from "./types.js";
+import type { ConnectorRouteTarget, ConnectOptions, ConnectorHandle, TunnelSession } from "./types.js";
 import { type AccessGateway, type AccessIdentity, createAccessGateway } from "./gateway.js";
 export const DEFAULT_API = "https://notify.belweave.ai";
 
@@ -26,7 +26,7 @@ export async function connectInternal(options: ConnectOptions): Promise<Connecto
   if (options.relayApi) secureControlOrigin(options.relayApi);
   const domain = options.relayDomain ?? DEFAULT_RELAY_DOMAIN;
   const factory = options.tunnel ?? {
-    connect: (routes: Record<string, string>, nextFetch: typeof fetch) =>
+    connect: (routes: Record<string, ConnectorRouteTarget>, nextFetch: typeof fetch) =>
       defaultTunnelFactory(options, routes, nextFetch),
   };
 
@@ -34,10 +34,15 @@ export async function connectInternal(options: ConnectOptions): Promise<Connecto
   let connectorId: string | undefined;
   let session: TunnelSession | undefined;
   try {
-    const protectedRoutes: Record<string, string> = {};
-    for (const [routeName, target] of Object.entries(options.routes)) {
+    const protectedRoutes: Record<string, ConnectorRouteTarget> = {};
+    for (const [routeName, value] of Object.entries(options.routes)) {
+      const { target, proxyProtocol } = typeof value === "string" ? { target: value } : value;
+      if (typeof target !== "string" || (proxyProtocol !== undefined && proxyProtocol !== "v1" && proxyProtocol !== "v2")) {
+        throw new Error("Routes require a target and optional proxyProtocol v1 or v2");
+      }
       const gateway = await createAccessGateway({
         target,
+        proxyProtocol,
         routeName,
         authorizeCallback: async (input) => {
           if (!connectorId) throw new Error("Connector is not ready");
@@ -71,14 +76,14 @@ export async function connectInternal(options: ConnectOptions): Promise<Connecto
         },
       });
       gateways.push(gateway);
-      protectedRoutes[routeName] = gateway.target;
+      protectedRoutes[routeName] = proxyProtocol ? { target: gateway.target, proxyProtocol } : gateway.target;
     }
     const activeSession = await factory.connect(protectedRoutes, fetchImpl);
     session = activeSession;
     const hostname = activeSession.hostname.replace(/\.$/, "");
     const declared: ConnectorRoute[] = Object.entries(options.routes).map(([name, target]) => ({
       name,
-      target,
+      target: typeof target === "string" ? target : target.target,
       url: tunnelOrigin(activeSession.id, name, domain),
     }));
 

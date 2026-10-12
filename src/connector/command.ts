@@ -9,6 +9,7 @@ export async function runConnect(input: {
   port: number;
   name: string;
   host?: string;
+  proxyProtocol?: "v1" | "v2";
   teamId?: string;
   oncallGroupId?: string;
   relayDomain?: string;
@@ -32,7 +33,7 @@ export async function runConnect(input: {
     token: input.token,
     apiUrl: input.apiUrl,
     name: input.name,
-    routes: { [input.name]: target },
+    routes: { [input.name]: input.proxyProtocol ? { target, proxyProtocol: input.proxyProtocol } : target },
     teamId: input.teamId,
     oncallGroupId: input.oncallGroupId,
     relayDomain: input.relayDomain,

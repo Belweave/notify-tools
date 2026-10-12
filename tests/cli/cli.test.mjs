@@ -2005,3 +2005,17 @@ test("an idempotent replay of superseded progress is not a delivery failure", as
     assert.equal(result.body.superseded, 1);
   } finally { globalThis.fetch = originalFetch; }
 });
+
+test("notify connect accepts PROXY v1/v2 and rejects invalid values before opening a tunnel", async () => {
+  for (const proxyProtocol of ["v1", "v2"]) {
+    const result = await execute(["connect", "3000", "--name", "work", "--proxy-protocol", proxyProtocol], { NOTIFY_TOKEN: "ntf_test" }, {
+      detach: true,
+      connector: { connectInternal: async (options) => {
+        assert.deepEqual(options.routes.work, { target: "127.0.0.1:3000", proxyProtocol });
+        return { connector: { id: "conn_test", name: "work" }, routes: [], close: async () => {} };
+      } },
+    });
+    assert.equal(result.exitCode, 0);
+  }
+  for (const value of ["v3", "yes", ""]) await assert.rejects(execute(["connect", "3000", "--name", "work", "--proxy-protocol", value], { NOTIFY_TOKEN: "ntf_test" }), /--proxy-protocol (must be v1 or v2|requires a value)/);
+});

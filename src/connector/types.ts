@@ -1,6 +1,9 @@
 // SPDX-License-Identifier: Apache-2.0
 import { type ConnectorDto, type ConnectorRoute } from "./protocol.js";
 
+export type ProxyProtocol = "v1" | "v2";
+export type ConnectorRouteTarget = string | { target: string; proxyProtocol?: ProxyProtocol };
+
 export interface TunnelSession {
   id: string;
   hostname: string;
@@ -8,13 +11,13 @@ export interface TunnelSession {
 }
 
 export interface TunnelFactory {
-  connect: (routes: Record<string, string>, fetchImpl: typeof fetch) => Promise<TunnelSession>;
+  connect: (routes: Record<string, ConnectorRouteTarget>, fetchImpl: typeof fetch) => Promise<TunnelSession>;
 }
 
 export interface ConnectOptions {
   token: string;
   name: string;
-  routes: Record<string, string>;
+  routes: Record<string, ConnectorRouteTarget>;
   apiUrl?: string;
   relayDomain?: string;
   relayApi?: string;

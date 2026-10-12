@@ -117,7 +117,7 @@ export function help() {
   notify pages list --team <team_id> [--all] [--limit <n>] [--cursor <c>]
   notify pages get <page_id>
   notify pages resolve <page_id> [--note <text>]
-  notify connect <port> --name <name> [--host <host>] [--team <team_id>]
+  notify connect <port> --name <name> [--host <host>] [--team <team_id>] [--proxy-protocol v1|v2]
   notify connectors rotate-secret <connector_id>
   notify billing
   notify tokens list
