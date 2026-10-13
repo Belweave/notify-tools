@@ -1,3 +1,9 @@
+# 0.12.0
+
+- Add personal mini-app package build/validation/publish, owner reads, keys/archive, installation offers, and reason-bound report/block/disable/remove commands.
+- Add typed, side-effect-free `notifyMini()` storage detection, separate from authenticated hosted-app microAuth.
+- Keep free web-only packages and the Apple physical-runtime approval gate explicit. No server SDK changes or npm publication.
+
 # Notify Tools 0.11.1
 
 - Add `notify activity update --priority high` for visible milestones. Responses report the APNs priority selected; excess milestone requests fall back to normal within per-activity budgets.

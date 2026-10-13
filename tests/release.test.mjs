@@ -6,6 +6,7 @@ import { tmpdir } from "node:os";
 import { pathToFileURL } from "node:url";
 import test from "node:test";
 import { generateKeyPair, SignJWT } from "jose";
+import { createHash } from "node:crypto";
 
 const source = resolve("dist");
 const releaseVersion = JSON.parse(await readFile(join(source, "manifest.json"), "utf8")).version;
@@ -40,6 +41,28 @@ test("release runs and typechecks outside the checkout without dependencies", as
     const help = node([join(release, "cli/notify.mjs"), "--help"], { cwd: folder, env });
     assert.equal(help.status, 0, help.stderr);
     assert.match(help.stdout, /notify auth login/);
+    assert.match(help.stdout, /notify mini-apps/);
+    const invalid = node([join(release, "cli/notify.mjs"), "mini-apps", "validate", join(folder, "absent.json")], { cwd: folder, env });
+    assert.match(invalid.stderr, /ENOENT/);
+    assert.doesNotMatch(invalid.stderr, /No token/);
+    const packageDir = join(folder, "mini");
+    await mkdir(packageDir);
+    const html = Buffer.from("<h1>Offline draft</h1>");
+    await writeFile(join(packageDir, "index.html"), html);
+    await writeFile(join(packageDir, "manifest.json"), JSON.stringify({
+      schemaVersion: 1, appId: "release-test", name: "Release test", version: "1.0.0",
+      publisher: { id: "fixture", name: "Fixture" }, format: "web", runtime: "notify-web-v1",
+      entryPoint: "index.html", files: [{ path: "index.html", size: html.length,
+        sha256: createHash("sha256").update(html).digest("hex"), mediaType: "text/html" }],
+      capabilities: ["local-storage"], ageRating: 4, commerce: "none",
+    }));
+    const archive = join(folder, "mini.json");
+    const built = node([join(release, "cli/notify.mjs"), "mini-apps", "build", packageDir, archive], { cwd: folder, env });
+    assert.equal(built.status, 0, built.stderr);
+    const validated = node([join(release, "cli/notify.mjs"), "mini-apps", "validate", archive], { cwd: folder, env });
+    assert.equal(validated.status, 0, validated.stderr);
+    assert.equal(JSON.parse(built.stdout).packageId, JSON.parse(validated.stdout).packageId);
+
     const hook = node([join(release, "cli/notify.mjs"), "permissions", "hook", "claude"], {
       cwd: folder,
       env,
@@ -56,12 +79,15 @@ test("release runs and typechecks outside the checkout without dependencies", as
     await writeFile(
       join(folder, "consumer.mts"),
       `
-import { connectMicroAuth, supportsMicroAuth } from './release/sdk/browser.mjs';
+import { connectMicroAuth, supportsMicroAuth, notifyMini } from './release/sdk/browser.mjs';
 import { createMicroAuthServer, createMicroAuthBinding, type MicroAuthChallengeStore } from './release/sdk/server.mjs';
 import { connectInternal, honoNotifyPass } from './release/sdk/connector.mjs';
 const store: MicroAuthChallengeStore = { async put() {}, async get() { return null; }, async consume() { return false; } };
 createMicroAuthServer({ origin: 'https://example.com', appId: 'app_test', store }).begin(createMicroAuthBinding());
-void [connectMicroAuth, supportsMicroAuth, connectInternal, honoNotifyPass];
+const mini = notifyMini();
+const draft: Promise<string | null> | undefined = mini?.storage.get("draft");
+const write: Promise<null> | undefined = mini?.storage.set("draft", "text");
+void [connectMicroAuth, supportsMicroAuth, connectInternal, honoNotifyPass, draft, write];
 `,
     );
     await writeFile(
