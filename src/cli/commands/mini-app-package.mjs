@@ -250,7 +250,7 @@ export async function miniAppsCommand(action, id, extra, request, options = {}) 
     return request("/api/agent/mini-apps/publish", { method: "POST", body: bytes });
   }
   if (action === "list" || action === "review" || action === "export" || action === "keys")
-    return request(`/api/agent/mini-apps/${action === "list" ? "" : action}`);
+    return request(`/api/agent/mini-apps${action === "list" ? "" : `/${action}`}`);
   if (["get", "archive", "report", "block", "disable", "remove", "offer"].includes(action)) {
     if (!/^[a-f0-9]{64}$/.test(id ?? "")) fail(`${action} requires package SHA-256`);
     const base = `/api/agent/mini-apps/${id}`;

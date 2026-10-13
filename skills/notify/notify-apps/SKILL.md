@@ -39,7 +39,7 @@ Native app storage is partitioned by account, app, origin, workspace, and server
 
 For private upstream services, use [notify-connectors](../notify-connectors/SKILL.md); an ordinary microAuth session alone does not provide continuous employer-access revocation.
 
-## Personal mini apps (tools 0.12.0)
+## Personal mini apps (tools 0.12.1)
 
 `notify mini-apps build DIRECTORY OUTPUT` creates a deterministic archive without signing in; `validate ARCHIVE` checks it locally. Existing output files are preserved. Packages must use `format: "web"`, `runtime: "notify-web-v1"`, `commerce: "none"`, a listed HTML entry point, SHA-256 file digests, and an authenticated publisher ID. Only free personal web packages are supported; arbitrary React Native bundles and paid commerce are disabled. Physical-device runtime availability remains gated pending Apple approval.
 

@@ -1,4 +1,8 @@
-# 0.12.0
+# Notify Tools 0.12.1
+
+- Fix `notify mini-apps list` to use the catalog endpoint without a trailing slash. Verified against the live backend.
+
+# Notify Tools 0.12.0
 
 - Add personal mini-app package build/validation/publish, owner reads, keys/archive, installation offers, and reason-bound report/block/disable/remove commands.
 - Add typed, side-effect-free `notifyMini()` storage detection, separate from authenticated hosted-app microAuth.

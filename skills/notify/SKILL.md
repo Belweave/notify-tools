@@ -2,7 +2,7 @@
 name: notify
 description: Use Notify to reach a person on their phone, collect a decision, show task progress, publish a web app, or manage Notify teams and integrations.
 metadata:
-  compatible-cli: "0.12.0"
+  compatible-cli: "0.12.1"
 ---
 
 # Notify

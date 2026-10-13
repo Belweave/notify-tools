@@ -196,7 +196,7 @@ test("owner reads and reason-bound controls use exact supported routes with mock
   for (const action of ["list", "keys", "review", "export", "get", "archive", "report", "block", "disable", "remove"]) {
     const calls = [];
     await miniAppsCommand(action, id, undefined, async (path, init) => { calls.push({ path, init }); return {}; }, { reason: "  testing  " });
-    const suffix = action === "list" ? "/" : ["keys", "review", "export"].includes(action) ? `/${action}` : `/${id}${["get", "remove"].includes(action) ? "" : `/${action}`}`;
+    const suffix = action === "list" ? "" : ["keys", "review", "export"].includes(action) ? `/${action}` : `/${id}${["get", "remove"].includes(action) ? "" : `/${action}`}`;
     assert.equal(calls[0].path, `/api/agent/mini-apps${suffix}`);
     if (["report", "block", "disable", "remove"].includes(action)) {
       assert.deepEqual(calls[0].init, { method: action === "remove" ? "DELETE" : "POST", body: '{"reason":"testing"}' });
