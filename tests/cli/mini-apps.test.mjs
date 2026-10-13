@@ -155,6 +155,16 @@ test("offer performs only an explicit personal package request with mocked trans
     /SHA-256/,
   );
 });
+test("CLI MIME map matches the published package contract", async () => {
+  // Snapshot from Belweave/notify; provenance is recorded in the fixture.
+  // Server contract tests independently exercise the live implementation.
+  const contract = JSON.parse(await readFile(
+    new URL("../fixtures/mini-app-contract.json", import.meta.url), "utf8",
+  ));
+  assert.deepEqual(MINI_APP_MEDIA_TYPES, contract.mediaTypes);
+
+});
+
 test("CLI validate and publish reject hashed casefold ancestor collisions before upload", async () => {
   for (const paths of [
     ["assets.js", "assets.js/child.js"],
