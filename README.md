@@ -9,12 +9,12 @@ The command line, microAuth() SDK, service connector, and coding-agent integrati
 Requires **Node.js 22.13 or newer**. Download the archive and checksum file for the exact release, verify them, then inspect and run the installer. No npm packages need to be installed.
 
 ```sh
-curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.12.0/notify-tools-0.12.0.tar.gz
-curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.12.0/SHA256SUMS
+curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.12.1/notify-tools-0.12.1.tar.gz
+curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.12.1/SHA256SUMS
 shasum -a 256 -c SHA256SUMS
-mkdir notify-tools-0.12.0
-tar -xzf notify-tools-0.12.0.tar.gz -C notify-tools-0.12.0
-cd notify-tools-0.12.0
+mkdir notify-tools-0.12.1
+tar -xzf notify-tools-0.12.1.tar.gz -C notify-tools-0.12.1
+cd notify-tools-0.12.1
 node install.mjs --dry-run
 node install.mjs
 export PATH="$HOME/.local/bin:$PATH"
@@ -294,7 +294,7 @@ Builds produce runnable ESM files in `dist/` and preserve earlier output under i
 
 Notify Tools is licensed under [Apache-2.0](LICENSE). Bundled dependencies retain their own licenses, included in each release. Notify and Belweave names and logos are not licensed under the code license. Report security issues through [GitHub private vulnerability reporting](https://github.com/Belweave/notify-tools/security/advisories/new).
 
-## Personal mini apps (tools 0.12.0)
+## Personal mini apps (tools 0.12.1)
 
 `notify mini-apps build DIRECTORY OUTPUT` creates a deterministic archive without signing in; `validate ARCHIVE` checks it locally. Existing output files are preserved. Packages must use `format: "web"`, `runtime: "notify-web-v1"`, `commerce: "none"`, a listed HTML entry point, SHA-256 file digests, and an authenticated publisher ID. Only free personal web packages are supported; arbitrary React Native bundles and paid commerce are disabled. Physical-device runtime availability remains gated pending Apple approval.
 
