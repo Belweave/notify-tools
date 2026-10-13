@@ -9,8 +9,8 @@ The command line, microAuth() SDK, service connector, and coding-agent integrati
 Requires **Node.js 22.13 or newer**. Download the archive and checksum file for the exact release, verify them, then inspect and run the installer. No npm packages need to be installed.
 
 ```sh
-curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.12.1/notify-tools-0.12.1.tar.gz
-curl -fLO https://github.com/Belweave/notify-tools/releases/download/v0.12.1/SHA256SUMS
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.12.1/notify-tools-0.12.1.tar.gz
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.12.1/SHA256SUMS
 shasum -a 256 -c SHA256SUMS
 mkdir notify-tools-0.12.1
 tar -xzf notify-tools-0.12.1.tar.gz -C notify-tools-0.12.1
@@ -25,6 +25,9 @@ notify --help
 The checksum detects a corrupted or mismatched download; it is distributed alongside the archive. On Linux, `sha256sum -c SHA256SUMS` also works. Installation keeps each release under `~/.local/share/notify-tools/VERSION` and points `~/.local/bin/notify` to it. Use `--prefix DIR` for another location. Earlier releases are preserved, and the installer refuses to replace an unrelated `notify` executable. Add the bin directory to your shell's PATH permanently as appropriate for your shell.
 
 You can also run `node cli/notify.mjs` directly from the extracted archive, including on Windows. Agent service setup has platform-specific requirements described by `notify permissions help`; the OpenCode background service installer currently targets macOS.
+
+The public download service is owned and deployed from this Tools repository.
+See [release download maintenance](docs/downloads.md).
 
 ## Use Notify
 

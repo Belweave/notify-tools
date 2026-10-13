@@ -1,0 +1,19 @@
+{
+  "$schema": "https://raw.githubusercontent.com/cloudflare/workers-sdk/main/packages/wrangler/config-schema.json",
+  "name": "notify-tools-downloads",
+  "compatibility_date": "2026-08-06",
+  "account_id": "98117dde620017491911477efef1efbb",
+  "workers_dev": true,
+  "routes": [
+    {
+      "pattern": "notify.belweave.ai/downloads/notify-tools/*",
+      "zone_id": "de9d466ee4f0b70ba058817d601d3145"
+    }
+  ],
+  "assets": {
+    "directory": "./dist/download-site",
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
+  "observability": { "enabled": false }
+}
