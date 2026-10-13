@@ -16,6 +16,7 @@ export function parseArgs(argv) {
   /** Index in `positionals` where post-`--` arguments start, or null. */
   let separatorAt = null;
   const valueFlags = new Set([
+    "reason",
     "title",
     "image",
     "url",

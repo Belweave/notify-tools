@@ -91,3 +91,29 @@ describe("optional browser integration", () => {
     expect(bridge).not.toHaveBeenCalled();
   });
 });
+
+import { notifyMini } from "../../src/microauth/browser.js";
+
+describe("packaged mini-app storage detection", () => {
+  it("is safe outside browsers and rejects incomplete brokers", () => {
+    vi.stubGlobal("window", undefined);
+    expect(notifyMini()).toBeUndefined();
+    vi.stubGlobal("window", { notifyMini: { storage: { get() {} } } });
+    expect(notifyMini()).toBeUndefined();
+  });
+  it("returns the broker without storage, network or authentication side effects", async () => {
+    const storage = { get: vi.fn(async () => null), set: vi.fn(async () => null), remove: vi.fn(async () => null) };
+    const microAuth = vi.fn();
+    const fetcher = vi.fn();
+    const bridge = { storage };
+    vi.stubGlobal("window", { notifyMini: bridge, notify: { microAuth } });
+    vi.stubGlobal("fetch", fetcher);
+    expect(notifyMini()).toBe(bridge);
+    expect(storage.get).not.toHaveBeenCalled();
+    expect(storage.set).not.toHaveBeenCalled();
+    expect(storage.remove).not.toHaveBeenCalled();
+    expect(microAuth).not.toHaveBeenCalled();
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(await notifyMini()?.storage.get("missing")).toBeNull();
+  });
+});

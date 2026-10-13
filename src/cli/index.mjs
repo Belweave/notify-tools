@@ -7,6 +7,7 @@ import { login, openBrowser } from "./session/authorize.mjs";
 import { loadConfig, writeConfig } from "./session/credentials.mjs";
 
 const commandModules = {
+  "mini-apps": () => import("./commands/mini-apps.mjs").then((module) => module.handleMiniApps),
   connect: () => import("./commands/connect.mjs").then((module) => module.handleConnect),
   connectors: () => import("./commands/connectors.mjs").then((module) => module.handleConnectors),
   auth: () => import("./commands/auth.mjs").then((module) => module.handleAuth),
@@ -55,6 +56,10 @@ export async function execute(argv, env = process.env, overrides = {}) {
       exitCode: 0,
       ...(body?.help ? { text: true } : {}),
     };
+  }
+  if (group === "mini-apps" && ["build", "validate"].includes(action)) {
+    const { handleMiniApps } = await import("./commands/mini-apps.mjs");
+    return handleMiniApps({ action, id, positionals, options });
   }
   const config = await loadConfig(env);
   const loadCommand = Object.hasOwn(commandModules, group) ? commandModules[group] : undefined;

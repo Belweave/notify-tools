@@ -42,3 +42,20 @@ export async function microAuth(options: MicroAuthOptions): Promise<string> {
     throw new MicroAuthError("INVALID_RESPONSE", "microAuth() returned an invalid pass.");
   return token;
 }
+
+export interface NotifyMiniBridge {
+  readonly storage: {
+    get(key: string): Promise<string | null>;
+    set(key: string, value: string): Promise<null>;
+    remove(key: string): Promise<null>;
+  };
+}
+
+/** Detects the optional packaged-app storage broker without calling it or authenticating. */
+export function notifyMini(): NotifyMiniBridge | undefined {
+  if (typeof window === "undefined") return undefined;
+  const bridge = (window as unknown as { notifyMini?: NotifyMiniBridge }).notifyMini;
+  return bridge && typeof bridge.storage?.get === "function" &&
+    typeof bridge.storage.set === "function" && typeof bridge.storage.remove === "function"
+    ? bridge : undefined;
+}

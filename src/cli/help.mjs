@@ -3,6 +3,11 @@ import { POLL_TIMEOUT_SECONDS } from "./foundation/results.mjs";
 
 export function help() {
   return `Usage:
+  notify mini-apps build <directory> <output-archive>
+  notify mini-apps validate|publish <archive>
+  notify mini-apps list|keys|review|export
+  notify mini-apps get|archive|offer <packageId>
+  notify mini-apps report|block|disable|remove <packageId> --reason <reason>
   notify auth login [--client-name <name>] [--scope <scope>] [--expires-in <duration>]
                      [--timeout <duration>] [--open|--no-open] [--json]
   notify auth logout
