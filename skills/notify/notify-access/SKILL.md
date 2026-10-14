@@ -9,6 +9,10 @@ Start with MCP `auth_status` or `notify auth status`. If connected, reuse that i
 
 For a missing CLI login, `notify auth login` opens the human authorization flow. The person signs in and chooses access. A remote MCP client connects to `https://notify.belweave.ai/mcp` through its own OAuth flow. Agent tools cannot mint tokens or register the phone on the person's behalf.
 
+Account sign-in uses Clerk; CLI browser approval still issues a scoped API key. Reuse existing `ntf_` keys or Clerk user API keys (`ak_`), never Clerk application secret or publishable keys. MCP clients may use OAuth discovery or a privately configured API-key bearer header. Existing Notify OAuth credentials remain compatible during migration.
+
+If the MCP host demands a static OAuth client ID, obtain its exact callback URI and register an OAuth application in the production Clerk Dashboard with that URI and the required scopes. Configure the client ID and, only if required by the registered client, its secret through the host's private credential settings. Do not guess callback URIs, expose secrets, hard-code OAuth endpoints, or implement a manual token exchange. Diagnose discovery metadata, callback matching, scopes, and client authentication method before changing registration. `notify auth login` needs no OAuth client ID or secret.
+
 When a write returns insufficient scope, identify the required scope from the tool error or current API schema. Request only that access through a new human authorization flow. The default CLI login omits `events:read` and `tokens:manage`; do not interpret that as a broken server. Do not automatically sign out, revoke tokens, or widen scopes to resolve a different error.
 
 Tokens belong in the connected client's credential store or `NOTIFY_TOKEN`, never in command arguments, generated source, or chat. Webhook URLs and signing secrets can also grant access. Use the host's private secret-entry mechanism when available; otherwise guide the user to configure them locally without pasting them into the conversation.

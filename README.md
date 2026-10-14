@@ -43,9 +43,19 @@ The CLI includes authentication, notifications, approvals and replies, Live Acti
 
 See the [complete CLI reference](https://notify.belweave.ai/docs/cli) for flags and the [workflow guides](skills/notify/SKILL.md) for examples.
 
+Notify account sign-in uses Clerk. `notify auth login` still opens Notify's browser approval page, asks for the requested scopes, and securely saves the resulting API key. Existing `ntf_` keys and Clerk user API keys (`ak_`) are supported. These are user credentials, separate from Clerk's application publishable and secret keys. Advanced clients may supply an OAuth bearer token through `NOTIFY_TOKEN`; expiry and scope checks remain the server's responsibility. Never paste credentials into chat or pass them as command arguments.
+
+### Connect a remote MCP client
+
+Use `https://notify.belweave.ai/mcp`. An OAuth-capable client should follow the endpoint's protected-resource and authorization-server discovery metadata. A client with a private bearer-header setting can alternatively use a Notify API key as `Authorization: Bearer <key>`; store the key in that client's secret store. Existing Notify OAuth credentials continue to work during migration.
+
+If a client asks for a static OAuth client ID despite dynamic registration support, register an OAuth application in the production Clerk Dashboard and configure that ID in the client. Obtain the client's exact callback URI first, register that URI verbatim, and enable the scopes the client needs. Use a client secret only when the registered client and host require one, entered through the host's private secret setting. A missing callback URI cannot be guessed from the MCP server URL. Discovery's advertised endpoints remain authoritative; do not hard-code a token endpoint or manually exchange tokens. Check the discovery metadata, callback match, requested scopes, and client authentication method when diagnosing setup failures. The CLI browser approval flow does not require an OAuth client ID or secret.
+
 ## Add microAuth() to a website
 
 Ordinary websites open in Notify without integration. microAuth() lets a participating site ask the user to sign in and share selected profile fields from their phone.
+
+Clerk authenticates the Notify account underneath this flow. microAuth() still asks for phone consent and returns a Notify app pass signed with the app's existing signing keys; its audience, requested profile fields, challenge binding, and verification contract are unchanged. It is separate from generic Clerk website login.
 
 Copy the release's **whole `sdk` directory** to your app's `vendor/notify` directory, retaining its chunks and declarations. Keep the release's license and third-party notices with redistributed files.
 

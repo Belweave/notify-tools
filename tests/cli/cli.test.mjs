@@ -3,7 +3,39 @@ import { chmod, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { execute, parseArgs, parseDuration, run } from "../../src/cli/index.mjs";
+import { execute, loadConfig, parseArgs, parseDuration, run, writeConfig } from "../../src/cli/index.mjs";
+
+test("saved legacy and Clerk API keys reload and reach the API unchanged", async () => {
+  const directory = await mkdtemp(join(tmpdir(), "notify-credentials-"));
+  const path = join(directory, "config.json");
+  const originalFetch = globalThis.fetch;
+  try {
+    for (const token of ["ntf_legacy_fixture", "ak_clerk_fixture-123"]) {
+      await writeConfig(path, { token, apiUrl: "https://example.test" });
+      globalThis.fetch = async (_url, init) => {
+        assert.equal(init.headers.authorization, `Bearer ${token}`);
+        return Response.json({ authenticated: true });
+      };
+      assert.equal((await execute(["auth", "status"], { NOTIFY_CONFIG: path })).exitCode, 0);
+    }
+    for (const token of ["ak_", "sk_live_fixture", "ak_bad token", "ntf_bad\r\nheader", "ak_bad;command"]) {
+      await writeConfig(path, { token });
+      await assert.rejects(loadConfig({ NOTIFY_CONFIG: path }), /Missing Notify token/);
+    }
+  } finally {
+    globalThis.fetch = originalFetch;
+    await rm(directory, { recursive: true, force: true });
+  }
+});
+
+test("environment supports opaque OAuth bearer tokens and rejects header injection", async () => {
+  for (const token of ["ntf_fixture", "ak_fixture", "opaque.OAuth~token+/="]) {
+    assert.equal((await loadConfig({ NOTIFY_TOKEN: token })).token, token);
+  }
+  for (const token of ["Bearer ak_fixture", "ak_bad\nheader", "ak_bad\rheader", "ak_bad\tvalue", "ak_bad\u0000value", " ak_fixture", "ak_fixture "]) {
+    await assert.rejects(loadConfig({ NOTIFY_TOKEN: token }), /Invalid NOTIFY_TOKEN/);
+  }
+});
 
 test("parses repeatable devices and notify ask options", () => {
   const parsed = parseArgs([
@@ -209,7 +241,7 @@ test("auth login polls through pending and slow_down without opening a non-TTY b
   const directory = await mkdtemp(join(tmpdir(), "notify-login-"));
   const path = join(directory, "config.json");
   const deviceCode = "d".repeat(43);
-  const accessToken = `ntf_${"s".repeat(43)}`;
+  const accessToken = `ak_${"s".repeat(43)}`;
   const calls = [];
   const sleeps = [];
   let opened = 0;
@@ -248,7 +280,7 @@ test("auth login polls through pending and slow_down without opening a non-TTY b
       token: {
         id: "tok_login",
         name: "CI agent",
-        prefix: "ntf_ssssssss",
+        prefix: "ak_ssssssss",
         scopes: ["interactions:read"],
       },
     });
@@ -286,6 +318,7 @@ test("auth login polls through pending and slow_down without opening a non-TTY b
       tokenId: "tok_login",
     });
     if (process.platform !== "win32") assert.equal((await stat(path)).mode & 0o777, 0o600);
+    assert.equal((await loadConfig({ NOTIFY_CONFIG: path })).token, accessToken);
   } finally {
     globalThis.fetch = originalFetch;
     await rm(directory, { recursive: true, force: true });
