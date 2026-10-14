@@ -9,12 +9,12 @@ The command line, microAuth() SDK, service connector, and coding-agent integrati
 Requires **Node.js 22.13 or newer**. Download the archive and checksum file for the exact release, verify them, then inspect and run the installer. No npm packages need to be installed.
 
 ```sh
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.12.1/notify-tools-0.12.1.tar.gz
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.12.1/SHA256SUMS
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.12.2/notify-tools-0.12.2.tar.gz
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.12.2/SHA256SUMS
 shasum -a 256 -c SHA256SUMS
-mkdir notify-tools-0.12.1
-tar -xzf notify-tools-0.12.1.tar.gz -C notify-tools-0.12.1
-cd notify-tools-0.12.1
+mkdir notify-tools-0.12.2
+tar -xzf notify-tools-0.12.2.tar.gz -C notify-tools-0.12.2
+cd notify-tools-0.12.2
 node install.mjs --dry-run
 node install.mjs
 export PATH="$HOME/.local/bin:$PATH"
