@@ -6,6 +6,12 @@ import { chmod, mkdir, open, readFile, rename, rm, stat } from "node:fs/promises
 import { homedir, platform } from "node:os";
 import { dirname, join } from "node:path";
 
+// RFC 6750 bearer syntax. The server, rather than the client, authenticates
+// opaque tokens; reject whitespace and controls before creating any header.
+export function isBearerToken(token) {
+  return typeof token === "string" && /^[A-Za-z0-9._~+/-]+=*$/.test(token);
+}
+
 export function configPath(env = process.env) {
   if (env.NOTIFY_CONFIG) return env.NOTIFY_CONFIG;
   if (platform() === "win32") return join(env.APPDATA ?? homedir(), "notify", "config.json");
@@ -16,6 +22,9 @@ export function configPath(env = process.env) {
 
 export async function loadConfig(env = process.env) {
   if (env.NOTIFY_TOKEN) {
+    if (!isBearerToken(env.NOTIFY_TOKEN)) {
+      throw new RequestError("Invalid NOTIFY_TOKEN; expected a bearer token without whitespace.", 401);
+    }
     return {
       token: env.NOTIFY_TOKEN,
       apiUrl: env.NOTIFY_API_URL ?? DEFAULT_API_URL,
@@ -47,7 +56,7 @@ export async function loadConfig(env = process.env) {
   } catch {
     throw new RequestError(`Invalid JSON in ${path}.`, 401);
   }
-  if (typeof parsed.token !== "string" || !parsed.token.startsWith("ntf_")) {
+  if (!isBearerToken(parsed.token) || !/^(ntf_|ak_)[A-Za-z0-9_-]+$/.test(parsed.token)) {
     throw new RequestError(`Missing Notify token in ${path}.`, 401);
   }
   return {

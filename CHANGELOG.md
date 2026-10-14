@@ -1,3 +1,9 @@
+# Notify Tools 0.12.2
+
+- Accept Clerk user API keys (`ak_`) in saved CLI credentials while preserving existing `ntf_` keys and browser approval login.
+- Validate bearer token syntax before creating authorization headers; retain support for OAuth bearer tokens through `NOTIFY_TOKEN`.
+- Document Clerk account authentication and the unchanged Notify microAuth app-pass contract.
+
 # Notify Tools 0.12.1
 
 - Fix `notify mini-apps list` to use the catalog endpoint without a trailing slash. Verified against the live backend.
