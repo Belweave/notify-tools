@@ -17,12 +17,18 @@ MCP equivalents are `activities_start`, `activities_update`, `activities_get`, a
 
 Use real progress between 0 and 1 when measured. Otherwise send a truthful status and omit the fraction. `standard`, `ring`, `hero`, `terminal`, and `steps` are available styles; choose for the information rather than cycling styles during a task. `--replace` is explicit replacement of an activity, not an ordinary notification replacement feature.
 
+## Design the surface
+
+For curated templates, design-file generation/validation, or visual configuration, read [Live Activity design](references/design.md). Check its release and deployment availability before using new commands.
+
+Supply semantic content and supported design tokens. Notify and the operating system own layout, safe areas, lock-screen and Dynamic Island presentation; do not send pixel dimensions, fold poses, or assumed device geometry. Keep the same job meaning on every supported surface and rely on returned device capability/readiness.
+
+Make the title identify the job; use status for its current stage, subtitle for a short metric, and detail for useful context. Pair a meaningful SF Symbol (`--symbol`) with an accessible `--accent-color '#RRGGBB'`. Use `--privacy private` when lock-screen content is sensitive, and keep secrets out of all presentation text. `ring` suits measured completion, `hero` one key status, `terminal` compact technical output, and `steps` staged work. A style does not supply data automatically.
+
+Set `--stale-after` for when the displayed state stops being reliable and `--expires-in` for the intended start lifetime. Clear obsolete subtitle text with `--clear-subtitle`; use `--dismiss-after` on end when the final result should linger. `notify activity list`, `get ID_OR_KEY`, and `feed --filter live_activity` inspect state/history; feed requires `events:read`.
+
 ## Interpret delivery truthfully
 
 Read status, accepted/queued/failed counts, and `readiness` when returned. On iOS a start accepted by APNs can still be `starting` while Notify waits for the device's update token. Fresh starts are paced per device across senders, currently at least 60 seconds apart. Do not bypass that pacing with new keys or retry storms.
 
-The current server coalesces queued routine updates and reports superseded work separately. It preserves terminal and interaction boundaries. Routine updates use APNs priority 5. For an important visible milestone use `priority: "high"` (CLI `--priority high`) to request APNs 10. Notify allows four such updates per rolling minute and twenty per rolling hour per activity, shared by all calls; excess requests fall back to 5 with `priorityReason: "budget_exhausted"`. Read `apnsPriority` and `priorityReason` in the response. Priority is selected at admission and retained for queued dispatch/replay; queued is not delivered. Granted milestones are not coalesced by Notify. Starts, ends, and interaction updates use 10 independently of this milestone budget. Apple controls its own device budget, so high priority does not guarantee every step appears or prevent OS throttling. Pace updates around meaningful milestones, not animation frames; unlimited monthly usage does not imply unlimited instantaneous phone starts.
-
-An `update_token_delayed` warning means token registration has not arrived after the diagnostic threshold, currently 90 seconds. Check the device and ask the person to open Notify if needed. Do not report the activity as visibly running based only on provider acceptance. Ending remains necessary even if it never became visible.
-
-If the server predates these fields, report only the evidence it returns. Device operating systems ultimately control presentation.
+For high-priority milestones, coalescing, APNs budgets, or delayed-token diagnosis, read [delivery and pacing](references/delivery.md). Queued work is not delivered, and provider acceptance does not prove visibility. End the job even if it never became visible.

@@ -43,6 +43,43 @@ The CLI includes authentication, notifications, approvals and replies, Live Acti
 
 See the [complete CLI reference](https://notify.belweave.ai/docs/cli) for flags and the [workflow guides](skills/notify/SKILL.md) for examples.
 
+### Live Activity designs (0.13.0 source)
+
+The source checkout adds nine curated templates with automatic light/dark appearance,
+compact or comfortable spacing, semantic emphasis, and optional detail/symbol display.
+Build locally with `pnpm build` to try the offline commands below. The published
+0.12.2 download above does not include them. New rendering also requires the matching
+Notify backend and iOS app; this repository does not deploy either component.
+
+```sh
+node dist/cli/notify.mjs activity designs --json
+node dist/cli/notify.mjs activity design ring --json > ring.json
+node dist/cli/notify.mjs activity validate-design ring.json
+# With a matching server and installed phone build:
+node dist/cli/notify.mjs activity start --title "Release checks" --status "Testing" \
+  --progress 0.4 --key release-checks --design-file ring.json
+```
+
+Use `--design-file` with activity start/update or `send ask --live-activity`.
+JSON stdin also accepts a `design` object. On update, omission preserves it,
+`--clear-design` removes it, and a new object replaces it. A supplied template
+takes precedence over `style`; a style-only update clears an older template.
+Interaction labels, privacy, credentials, timing and native layout remain separate.
+See the [design guide](skills/notify/notify-progress/references/design.md) for the
+schema, template choices and readable status copy.
+
+Scripts can use the standalone `sdk/activity-design.mjs` and its declarations:
+
+```js
+import { activityDesign, validateActivityDesign } from "./vendor/notify/activity-design.mjs";
+
+const design = validateActivityDesign(
+  { ...activityDesign("hero"), emphasis: "progress" },
+  { kind: "progress" },
+);
+// Include design in the existing activity-start or activity-update JSON payload.
+```
+
 Notify account sign-in uses Clerk. `notify auth login` still opens Notify's browser approval page, asks for the requested scopes, and securely saves the resulting API key. Existing `ntf_` keys and Clerk user API keys (`ak_`) are supported. These are user credentials, separate from Clerk's application publishable and secret keys. Advanced clients may supply an OAuth bearer token through `NOTIFY_TOKEN`; expiry and scope checks remain the server's responsibility. Never paste credentials into chat or pass them as command arguments.
 
 ### Connect a remote MCP client

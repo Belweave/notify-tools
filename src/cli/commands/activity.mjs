@@ -1,10 +1,13 @@
 // SPDX-License-Identifier: Apache-2.0
+import { activityDesign, activityDesignCatalog } from "../../live-activities/design.mjs";
 import { parseDuration } from "../foundation/arguments.mjs";
 import { UsageError } from "../foundation/errors.mjs";
 import { readStdinJson } from "../foundation/input.mjs";
 import { dispatchExitCode } from "../foundation/results.mjs";
 import { request, scopedRequest } from "../foundation/transport.mjs";
 import {
+  designFromOptions,
+  readDesignFile,
   parseAccentColor,
   parseNonNegativeInteger,
   parseStyle,
@@ -12,6 +15,15 @@ import {
 
 export async function handleActivity(context) {
   const { action, id, options, config } = context;
+  if (["designs", "design", "validate-design"].includes(action)) {
+    if (options["design-file"] || options["clear-design"]) throw new UsageError("Design catalog commands do not accept --design-file or --clear-design");
+    if (action === "designs") return { body: activityDesignCatalog(), exitCode: 0 };
+    if (!id) throw new UsageError(`activity ${action} requires ${action === "design" ? "a template name" : "a standalone design JSON file"}`);
+    if (action === "validate-design") return { body: { valid: true, design: await readDesignFile(id) }, exitCode: 0 };
+    try { return { body: activityDesign(id), exitCode: 0 }; }
+    catch (error) { throw new UsageError(error.message); }
+  }
+  if ((options["design-file"] || options["clear-design"]) && !["start", "update"].includes(action)) throw new UsageError("Design flags apply only to activity start/update");
   if (action === "feed") {
     const query = new URLSearchParams();
     if (options.filter) query.set("filter", options.filter);
@@ -49,8 +61,10 @@ export async function handleActivity(context) {
     const title = options.title ?? stdin.title;
     const status = options.status ?? stdin.status;
     if (!title || !status) throw new UsageError("activity start requires --title and --status");
+    if (stdin.style !== undefined) parseStyle(stdin.style);
     const payload = {
       ...stdin,
+      ...await designFromOptions(options, stdin, { kind: "progress", update: action === "update" }),
       title,
       status,
       ...(options.key ? { key: options.key } : {}),
@@ -104,8 +118,10 @@ export async function handleActivity(context) {
     const priority = options.priority ?? stdin.priority;
     if (priority !== undefined && !["normal", "high"].includes(priority))
       throw new UsageError("--priority must be normal or high");
+    if (stdin.style !== undefined) parseStyle(stdin.style);
     const payload = {
       ...stdin,
+      ...await designFromOptions(options, stdin, { kind: "progress", update: action === "update" }),
       ...(priority !== undefined ? { priority } : {}),
       ...(options.title ? { title: options.title } : {}),
       ...(options.status ? { status: options.status } : {}),
@@ -137,6 +153,7 @@ export async function handleActivity(context) {
     const identifier = id ?? options.key;
     if (!identifier) throw new UsageError("activity end requires an activity ID or --key");
     const stdin = options.stdin ? await readStdinJson() : {};
+    if (Object.hasOwn(stdin, "design")) throw new UsageError("design applies only to activity start/update");
     const ifSequence =
       options["if-sequence"] === undefined
         ? stdin.ifSequence

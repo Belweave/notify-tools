@@ -35,6 +35,7 @@ export function parseArgs(argv) {
     "privacy",
     "accent-color",
     "style",
+    "design-file",
     "stale-after",
     "dismiss-after",
     "if-sequence",
@@ -78,6 +79,7 @@ export function parseArgs(argv) {
   ]);
   const booleanFlags = new Set([
     "clear-subtitle",
+    "clear-design",
     "approval",
     "yes-no",
     "text",

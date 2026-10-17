@@ -17,22 +17,25 @@ export function help() {
                [--app <app_id>] [--oncall <group_id>] [--group <dgrp_id>] [--idempotency-key <key>] [--stdin]
   notify send ask <prompt> (--approval|--yes-no|--text) [--title <name>] [--image <url>]
                 [--url <url>] [--device <id>] [--group <dgrp_id>] [--webhook <whk_id>] [--expires-in <duration>]
-                [--live-activity [--style <approval|shell|verdict|signal>]
+                [--live-activity [--style <approval|shell|verdict|signal>] [--design-file <file>]
                                  [--primary-label <label>] [--secondary-label <label>]]
                 [--idempotency-key <key>] [--stdin] [--wait [--timeout <duration>] | --poll]
   notify send withdraw <notification_id>
   notify interaction list
   notify interaction get <id>
   notify interaction wait <id> [--timeout <duration>]
+  notify activity designs [--json]
+  notify activity design <template> [--json]
+  notify activity validate-design <file>
   notify activity start --title <title> --status <status> [--key <key>] [--subtitle <text>] [--detail <text>]
                          [--progress <0..1>] [--symbol <symbol>] [--privacy <standard|private>]
-                         [--style <standard|ring|hero|terminal|steps>] [--accent-color <#RRGGBB>]
+                         [--style <standard|ring|hero|terminal|steps>] [--accent-color <#RRGGBB>] [--design-file <file>]
                          [--device <id>...] [--group <dgrp_id>] [--expires-in <duration>] [--stale-after <duration>]
                          [--replace] [--idempotency-key <key>] [--stdin]
   notify activity update <id|key> [--priority normal|high] [--title <title>] [--status <status>] [--subtitle <text>|--clear-subtitle] [--detail <text>]
                             [--progress <0..1>] [--symbol <symbol>] [--privacy <standard|private>]
-                            [--style <standard|ring|hero|terminal|steps>] [--accent-color <#RRGGBB>]
-                            [--stale-after <duration>] [--if-sequence <n>]
+                            [--style <standard|ring|hero|terminal|steps>] [--accent-color <#RRGGBB>] [--design-file <file>]
+                            [--stale-after <duration>] [--if-sequence <n>] [--clear-design]
                             [--idempotency-key <key>] [--stdin]
   notify activity end <id|key> [--status <status>] [--subtitle <text>|--clear-subtitle] [--detail <text>] [--progress <0..1>]
                          [--symbol <symbol>] [--accent-color <#RRGGBB>]
@@ -127,6 +130,13 @@ export function help() {
   notify billing
   notify tokens list
   notify tokens revoke <token_id>
+
+Live Activity designs are strict version-1 JSON. Generate a config with activity design,
+validate it offline with activity validate-design, then use --design-file or stdin design.
+Design template wins over legacy style. Update omits design to preserve it, replaces the
+whole design object when supplied, or resets with --clear-design (stdin design:null).
+A style-only update overrides an earlier design template. Geometry, actions and privacy
+remain native and protected; appearance defaults to system. Design files are capped at 16 KiB.
 
 send sends a one-shot push; send ask sends a push that elicits an answer.
 Inside send, a first positional of exactly "ask" selects the subcommand. Everything

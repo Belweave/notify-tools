@@ -19,10 +19,14 @@ The CLI reserves first positionals `ask` and `withdraw`. To send those literal w
 
 Keep the notification ID and delivery counts. A retry of the same event reuses its idempotency key; a different event gets a new key. Project grouping files messages in the inbox; it does not replace older system notifications. For an ongoing process, use [notify-progress](../notify-progress/SKILL.md).
 
+## Urgent incidents
+
+For an incident that must reach whoever is responsible, use the workspace's on-call page and deduplication/escalation workflow in [notify-workspaces](../notify-workspaces/SKILL.md). Current one-shot send has no `--urgent` or critical-alert switch. A progress `--priority high` changes APNs admission priority for that activity; it is not an urgent-message or Do Not Disturb bypass.
+
 ## Read or remove a prior update
 
 MCP `inbox_projects`, `inbox_list`, and `inbox_get` inspect history. The CLI equivalents are `notify inbox projects`, `notify inbox list`, and `notify inbox get <notification_id>`. Follow returned cursors when the task requires all results.
 
-Use `inbox_read` or `notify inbox read <notification_id>` only when marking that item read is part of the task. `inbox_read_all` applies to items that existed when the operation ran.
+Use `inbox_read` or `notify inbox read <notification_id>` only when marking that item read is part of the task. `notify inbox unread <notification_id>` restores unread state. `inbox_read_all` applies to items that existed when the operation ran.
 
 `notification_withdraw` / `notify send withdraw <notification_id>` requests removal from phones and marks the item read. It does not undo anything a person already saw or did. Use the retained ID, not a new send to imitate removal.

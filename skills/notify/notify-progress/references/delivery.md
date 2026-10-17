@@ -1,0 +1,7 @@
+# Live Activity pacing and delivery
+
+The current server coalesces queued routine updates and reports superseded work separately. It preserves terminal and interaction boundaries. Routine updates use APNs priority 5. For an important visible milestone use `priority: "high"` (CLI `--priority high`) to request APNs 10. Notify allows four such updates per rolling minute and twenty per rolling hour per activity, shared by all calls; excess requests fall back to 5 with `priorityReason: "budget_exhausted"`. Read `apnsPriority` and `priorityReason` in the response. Priority is selected at admission and retained for queued dispatch/replay; queued is not delivered. Granted milestones are not coalesced by Notify. Starts, ends, and interaction updates use 10 independently of this milestone budget. Apple controls its own device budget, so high priority does not guarantee every step appears or prevent OS throttling. Pace updates around meaningful milestones, not animation frames; unlimited monthly usage does not imply unlimited instantaneous phone starts.
+
+An `update_token_delayed` warning means token registration has not arrived after the diagnostic threshold, currently 90 seconds. Check the device and ask the person to open Notify if needed. Do not report the activity as visibly running based only on provider acceptance. Ending remains necessary even if it never became visible.
+
+If the server predates these fields, report only the evidence it returns. Device operating systems ultimately control presentation.
