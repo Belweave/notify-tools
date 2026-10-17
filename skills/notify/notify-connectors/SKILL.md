@@ -11,23 +11,24 @@ Confirm the local service and intended workspace. Run the app and the Notify CLI
 notify connect 3000 --name dashboard --team team_SELECTED_ID
 ```
 
+The port-only command above targets **HTTP**. For an existing HTTPS dashboard, preserve its scheme through the SDK instead of sending plaintext HTTP to its TLS port:
+
+```js
+import { connectInternal } from "./vendor/notify/connector.mjs";
+const connection = await connectInternal({
+  token: process.env.NOTIFY_TOKEN,
+  name: "dashboard",
+  routes: { dashboard: "https://127.0.0.1:3443" },
+});
+```
+
+Copy the complete SDK, persist any returned callback secret as described below, and close the handle on startup failure or shutdown. Node must trust the upstream certificate, which must match its hostname; use the actual valid upstream hostname when it differs. Preserve TLS verification. The CLI's port/host form has no HTTPS switch; do not infer one.
+
 Omit `--team` for personal use. `--name` is a DNS route label, not a display sentence. The SDK exposes `connectInternal` from the release's `sdk/connector.mjs` with `token`, `name`, `routes`, and optional `teamId`; retain the returned handle and close it during shutdown. Creating or changing a team connector requires current admin or owner authority.
 
 Use a private credential source for `NOTIFY_TOKEN`. CLI 0.10.0 and later saves callback signing secrets to a private mode-0600 file and reports only its path, including when authentication comes from the environment. SDK creation or rotation can return a secret once; persist it directly in protected storage. Older CLI releases printed it to stderr: use the updated CLI or a protected SDK runner before starting an agent-owned connector. Read the returned connector and route metadata to report the registered URL and app ID. Do not claim success until registration and the local service are reachable through the intended path.
 
-## Optional transport metadata
-
-OpenTunnel 0.5.1 adds `notify connect PORT --name NAME --proxy-protocol v1|v2`.
-This is off by default: enable it only after confirming the exact upstream listener
-accepts that PROXY version before HTTP, or before TLS for HTTPS. In the SDK, use
-`{ target: "127.0.0.1:3000", proxyProtocol: "v2" }` as that route's value; string
-routes remain supported. Ordinary web servers should omit the option.
-
-The mandatory gateway still authorizes the user session or signed callback before
-sending a preamble on a new upstream connection. Relay-supplied socket addresses
-are network metadata, not identity and not trusted browser forwarding headers.
-The connector retains tunnel/certificate state only in memory; restarting does
-not restore a persisted tunnel identity or certificate.
+For an upstream that explicitly supports PROXY framing, read [transport metadata](references/transport.md). Ordinary HTTP services omit this option.
 
 ## Preserve the gateway boundary
 
@@ -43,7 +44,7 @@ For an interaction routed back to this service, its creation payload can use:
 {"callback":{"target":{"connectorId":"conn_RETURNED_ID","route":"dashboard","path":"/notify/replies"}}}
 ```
 
-Inspect the live interaction schema and supply this through MCP, HTTP, or structured CLI input; there is no `--callback-target` flag. Set up the receiver before sending a real decision prompt.
+Inspect the live interaction schema and supply this through MCP, HTTP, or structured CLI input; there is no `--callback-target` flag. Set up the receiver before sending a real decision prompt; read [receiver payloads](../notify-automation/references/receivers.md) for the exact callback body and the separate saved-webhook envelope.
 
 Machine replies enter only through `POST /.notify/callback`. Notify validates the HMAC, durable replay receipt, current access, and the saved interaction target. The gateway forwards the approved path and returns no employer response body. Do not create an HMAC-only bypass for arbitrary application routes.
 

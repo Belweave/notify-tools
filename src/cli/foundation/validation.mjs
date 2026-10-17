@@ -1,4 +1,6 @@
 // SPDX-License-Identifier: Apache-2.0
+import { open } from "node:fs/promises";
+import { ACTIVITY_DESIGN_MAX_BYTES, parseActivityDesign, validateActivityDesign } from "../../live-activities/design.mjs";
 import { UsageError } from "./errors.mjs";
 
 export function parseAccentColor(value) {
@@ -111,4 +113,33 @@ export function rotationFromOptions(options, stdinRotation) {
     ...(options["starts-at"] ? { startsAt: options["starts-at"] } : {}),
   };
   return Object.keys(rotation).length > 0 ? rotation : undefined;
+}
+
+/** Bounded read even if the file grows between stat and read. */
+export async function readDesignFile(path, kind) {
+  const file = await open(path, "r").catch((error) => { throw new UsageError(`Cannot open design file ${path}: ${error.code ?? "read failed"}`); });
+  try {
+    const buffer = Buffer.alloc(ACTIVITY_DESIGN_MAX_BYTES + 1);
+    let length = 0;
+    while (length < buffer.length) {
+      const { bytesRead } = await file.read(buffer, length, buffer.length - length, null);
+      if (!bytesRead) break;
+      length += bytesRead;
+    }
+    if (length > ACTIVITY_DESIGN_MAX_BYTES) throw new UsageError(`Design file must be at most ${ACTIVITY_DESIGN_MAX_BYTES} bytes`);
+    try { return parseActivityDesign(buffer.subarray(0, length).toString("utf8"), { kind }); }
+    catch (error) { throw new UsageError(error.message); }
+  } finally { await file.close(); }
+}
+
+export async function designFromOptions(options, stdin, { kind, update = false } = {}) {
+  if (options["clear-design"] && !update) throw new UsageError("--clear-design is only valid for activity update");
+  if (options["design-file"] && Object.hasOwn(stdin, "design")) throw new UsageError("--design-file conflicts with stdin design; choose one");
+  if (options["clear-design"] && (options["design-file"] || Object.hasOwn(stdin, "design"))) throw new UsageError("--clear-design conflicts with --design-file or stdin design");
+  if (options["clear-design"]) return { design: null };
+  if (options["design-file"]) return { design: await readDesignFile(options["design-file"], kind) };
+  if (!Object.hasOwn(stdin, "design")) return {};
+  if (stdin.design === null && update) return { design: null };
+  try { return { design: validateActivityDesign(stdin.design, { kind }) }; }
+  catch (error) { throw new UsageError(error.message); }
 }

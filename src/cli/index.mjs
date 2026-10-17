@@ -61,6 +61,10 @@ export async function execute(argv, env = process.env, overrides = {}) {
     const { handleMiniApps } = await import("./commands/mini-apps.mjs");
     return handleMiniApps({ action, id, positionals, options });
   }
+  if (group === "activity" && ["designs", "design", "validate-design"].includes(action)) {
+    const { handleActivity } = await import("./commands/activity.mjs");
+    return handleActivity({ action, id, positionals, options });
+  }
   const config = await loadConfig(env);
   const loadCommand = Object.hasOwn(commandModules, group) ? commandModules[group] : undefined;
   if (!loadCommand) throw new UsageError("Unknown command. Run notify --help.");

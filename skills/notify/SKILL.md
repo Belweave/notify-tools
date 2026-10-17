@@ -2,7 +2,7 @@
 name: notify
 description: Use Notify to reach a person on their phone, collect a decision, show task progress, publish a web app, or manage Notify teams and integrations.
 metadata:
-  compatible-cli: "0.12.2"
+  compatible-cli: "0.13.0"
 ---
 
 # Notify
@@ -11,12 +11,12 @@ Notify connects software work to a person's phone. It provides durable messages 
 
 ## Choose a workflow
 
-Read the relevant guide; each is also a standalone skill within this bundle.
+Read only the relevant guide; each is also a standalone skill within this bundle. Follow its conditional reference links only for that capability.
 
 | User intent | Guide |
 |---|---|
-| Connect an account, inspect devices, fix authentication | [notify-access](notify-access/SKILL.md) |
-| Send an update, find an inbox item, withdraw a message | [notify-messages](notify-messages/SKILL.md) |
+| Connect an account, devices, tokens, OAuth/MCP, billing | [notify-access](notify-access/SKILL.md) |
+| Send an update, route urgency, manage inbox, withdraw | [notify-messages](notify-messages/SKILL.md) |
 | Ask for approval, a yes/no answer, or a written reply | [notify-decisions](notify-decisions/SKILL.md) |
 | Show changing job progress and finish it cleanly | [notify-progress](notify-progress/SKILL.md) |
 | Put a website in Notify, add microAuth sign-in, or package a personal mini app | [notify-apps](notify-apps/SKILL.md) |

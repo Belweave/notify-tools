@@ -12,7 +12,9 @@ notify send ask "Deploy reviewed commit abc123 to staging?" --approval --title "
 notify send ask "Which customer account should receive this report?" --text --title "Report destination" --poll
 ```
 
-MCP `ask` creates and briefly waits; `interactions_create` returns immediately. Inspect the schema for the interaction payload and supported presentation. Live Activity presentation is a separate choice from the question type and may return before any wait. Use it when the decision benefits from a persistent phone surface.
+MCP `ask` creates and briefly waits; `interactions_create` returns immediately. Inspect the schema for the interaction payload and supported presentation. Live Activity presentation is a separate choice from the question type and may return before any wait. Use it when the decision benefits from a persistent phone surface. CLI `--live-activity` supports approval and yes/no, not text; choose `--style approval|shell|verdict|signal` and concise `--primary-label` / `--secondary-label` when useful. These prompts expire within eight hours. Read queued counts and capability diagnostics; do not claim a Live Activity was shown when no capable device is registered.
+
+For a designed approval or yes/no surface, read [Live Activity design](../notify-progress/references/design.md); new design-file support requires compatible CLI, server, and phone builds. Keep action labels specific to the question; design never changes who may answer.
 
 Retain `interaction.id`. If the wait times out with a pending interaction, continue through `interactions_wait`, `interactions_get`, or `notify interaction wait <id>`. Do not create a second prompt. A host without a durable wake-up mechanism may return the pending ID to the user rather than run an unbounded polling loop.
 

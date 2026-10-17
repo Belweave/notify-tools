@@ -11,6 +11,12 @@ Common organization workflows use `teams_list`, `teams_get`, `teams_invite`, `te
 
 Team apps use [notify-apps](../notify-apps/SKILL.md). Group targeting uses `groups_list` / `notify groups list --team <team_id>`. Current group members and organization admins/owners may target a group; membership in the broader team alone does not grant access to every group's devices.
 
+## Families and device groups
+
+`notify families` supports list/create/get/rename/delete/leave, members, invites, revoke-invite, and remove-member. A family invitation is accepted by the signed-in person; `notify services share SERVICE_ID --family FAMILY_ID` shares a service, and `--personal` restores personal scope. Family services and team apps are different sharing models.
+
+`notify groups create|update --team TEAM_ID` accepts explicit `--members USER_ID,...` and `--devices DEVICE_ID,...`; get and delete also require `--team`. Inspect current members/devices before replacing their lists. Message, ask, and activity targeting may use `--group`; do not combine a group with explicit devices. One-shot on-call targeting also excludes both.
+
 ## On-call work
 
 Inspect `oncall_me`, `oncall_list`, and the relevant rotation before changing it. Rotation creation needs members, period, handoff time, and timezone. Resolve ambiguous local times before applying a schedule; retain the returned rotation ID. Overrides have explicit start and end timestamps.

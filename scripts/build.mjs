@@ -61,6 +61,9 @@ outputs.push(
     outdir: "dist/sdk",
   }),
 );
+outputs.push(await build({ ...common, platform: "neutral", target: "es2022", splitting: false,
+  entryPoints: { "activity-design": "src/live-activities/design.mjs" }, outdir: "dist/sdk" }));
+await cp("src/live-activities/design.d.mts", "dist/sdk/activity-design.d.mts");
 await chmod("dist/cli/notify.mjs", 0o755);
 execFileSync(process.execPath, ["node_modules/typescript/bin/tsc"], {
   stdio: "inherit",
