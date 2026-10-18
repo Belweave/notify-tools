@@ -2,7 +2,7 @@
 
 ## Availability
 
-These design-file commands and `sdk/activity-design.mjs` are new source capabilities, not features of the published 0.12.2 release. Check the installed CLI help and deployed API schema before use. Phone rendering also requires an app build with design support. Local validation proves configuration validity, not production deployment, device support, delivery, or visibility. Existing style, symbol, color, and content fields remain the compatible route on older installations.
+These design-file commands and `sdk/activity-design.mjs` require Notify Tools 0.13.0 or newer; 0.12.2 does not include them. Check the installed CLI help and deployed API schema before use. Phone rendering also requires an app build with design support. Local validation proves configuration validity, not production deployment, device support, delivery, or visibility. Existing style, symbol, color, and content fields remain the compatible route on older installations.
 
 ## Choose by intent
 

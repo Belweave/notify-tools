@@ -1,9 +1,9 @@
-# Notify Tools 0.13.0 (unreleased)
+# Notify Tools 0.13.0
 
 - Add versioned Live Activity design configurations, an offline template catalog, config generation and validation, and file-based configuration for progress and decision commands.
 - Export a portable activity-design SDK with strict validation, JSON Schema and TypeScript declarations.
 - Expand the agent skills across the supported feature set with focused, lazily loaded references and accurate delivery, authentication and availability boundaries.
-- Live Activity design rendering requires the matching Notify backend and iOS app; merging this source does not publish a release or deploy those components.
+- Live Activity design rendering requires the matching Notify backend and iOS app. CLI/SDK archives, the public download service, and TestFlight are released separately.
 
 # Notify Tools 0.12.2
 
