@@ -9,12 +9,12 @@ The command line, microAuth() SDK, service connector, and coding-agent integrati
 Requires **Node.js 22.13 or newer**. Download the archive and checksum file for the exact release, verify them, then inspect and run the installer. No npm packages need to be installed.
 
 ```sh
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.12.2/notify-tools-0.12.2.tar.gz
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.12.2/SHA256SUMS
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.13.0/notify-tools-0.13.0.tar.gz
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.13.0/SHA256SUMS
 shasum -a 256 -c SHA256SUMS
-mkdir notify-tools-0.12.2
-tar -xzf notify-tools-0.12.2.tar.gz -C notify-tools-0.12.2
-cd notify-tools-0.12.2
+mkdir notify-tools-0.13.0
+tar -xzf notify-tools-0.13.0.tar.gz -C notify-tools-0.13.0
+cd notify-tools-0.13.0
 node install.mjs --dry-run
 node install.mjs
 export PATH="$HOME/.local/bin:$PATH"
@@ -43,20 +43,19 @@ The CLI includes authentication, notifications, approvals and replies, Live Acti
 
 See the [complete CLI reference](https://notify.belweave.ai/docs/cli) for flags and the [workflow guides](skills/notify/SKILL.md) for examples.
 
-### Live Activity designs (0.13.0 source)
+### Live Activity designs
 
-The source checkout adds nine curated templates with automatic light/dark appearance,
+Notify Tools 0.13.0 includes nine curated templates with automatic light/dark appearance,
 compact or comfortable spacing, semantic emphasis, and optional detail/symbol display.
-Build locally with `pnpm build` to try the offline commands below. The published
-0.12.2 download above does not include them. New rendering also requires the matching
-Notify backend and iOS app; this repository does not deploy either component.
+The template catalog and validation commands run offline. New rendering also requires
+the matching Notify backend and iOS app; this repository does not deploy either component.
 
 ```sh
-node dist/cli/notify.mjs activity designs --json
-node dist/cli/notify.mjs activity design ring --json > ring.json
-node dist/cli/notify.mjs activity validate-design ring.json
+notify activity designs --json
+notify activity design ring --json > ring.json
+notify activity validate-design ring.json
 # With a matching server and installed phone build:
-node dist/cli/notify.mjs activity start --title "Release checks" --status "Testing" \
+notify activity start --title "Release checks" --status "Testing" \
   --progress 0.4 --key release-checks --design-file ring.json
 ```
 
