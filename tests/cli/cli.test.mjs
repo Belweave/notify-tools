@@ -3,7 +3,14 @@ import { chmod, mkdtemp, readFile, rm, stat, writeFile } from "node:fs/promises"
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import test from "node:test";
-import { execute, loadConfig, parseArgs, parseDuration, run, writeConfig } from "../../src/cli/index.mjs";
+import {
+  execute,
+  loadConfig,
+  parseArgs,
+  parseDuration,
+  run,
+  writeConfig,
+} from "../../src/cli/index.mjs";
 
 test("saved legacy and Clerk API keys reload and reach the API unchanged", async () => {
   const directory = await mkdtemp(join(tmpdir(), "notify-credentials-"));
@@ -18,7 +25,13 @@ test("saved legacy and Clerk API keys reload and reach the API unchanged", async
       };
       assert.equal((await execute(["auth", "status"], { NOTIFY_CONFIG: path })).exitCode, 0);
     }
-    for (const token of ["ak_", "sk_live_fixture", "ak_bad token", "ntf_bad\r\nheader", "ak_bad;command"]) {
+    for (const token of [
+      "ak_",
+      "sk_live_fixture",
+      "ak_bad token",
+      "ntf_bad\r\nheader",
+      "ak_bad;command",
+    ]) {
       await writeConfig(path, { token });
       await assert.rejects(loadConfig({ NOTIFY_CONFIG: path }), /Missing Notify token/);
     }
@@ -32,7 +45,15 @@ test("environment supports opaque OAuth bearer tokens and rejects header injecti
   for (const token of ["ntf_fixture", "ak_fixture", "opaque.OAuth~token+/="]) {
     assert.equal((await loadConfig({ NOTIFY_TOKEN: token })).token, token);
   }
-  for (const token of ["Bearer ak_fixture", "ak_bad\nheader", "ak_bad\rheader", "ak_bad\tvalue", "ak_bad\u0000value", " ak_fixture", "ak_fixture "]) {
+  for (const token of [
+    "Bearer ak_fixture",
+    "ak_bad\nheader",
+    "ak_bad\rheader",
+    "ak_bad\tvalue",
+    "ak_bad\u0000value",
+    " ak_fixture",
+    "ak_fixture ",
+  ]) {
     await assert.rejects(loadConfig({ NOTIFY_TOKEN: token }), /Invalid NOTIFY_TOKEN/);
   }
 });
@@ -1611,6 +1632,33 @@ test("apps update sends metadata only and prints a readable line", async () => {
   await assert.rejects(execute(["apps", "update", "app_1"], AGENT_ENV), /requires --name/);
 });
 
+// Value: protects=explicit public client publication and withdrawal; fails_when=CLI flags send incorrect eligibility; why_new=no earlier CLI flags controlled public clients; seam=none
+test("public website eligibility is an explicit owner metadata update", async () => {
+  await withMockServer(
+    () =>
+      Response.json({
+        app: { id: "app_1", name: "Game", url: "https://game.example", consentedAt: null },
+      }),
+    async (requests) => {
+      await execute(["apps", "update", "app_1", "--public-client", "--json"], AGENT_ENV);
+      await execute(["apps", "update", "app_1", "--private-client", "--json"], AGENT_ENV);
+      assert.deepEqual(
+        requests.map((request) => request.body),
+        [{ publicClient: true }, { publicClient: false }],
+      );
+      assert.ok(
+        requests.every(
+          (request) => request.method === "PATCH" && request.path === "/api/agent/apps/app_1",
+        ),
+      );
+    },
+  );
+  await assert.rejects(
+    execute(["apps", "update", "app_1", "--public-client", "--private-client"], AGENT_ENV),
+    /cannot be used together/,
+  );
+});
+
 test("a missing scope names the scopes to grant and exits 3", async () => {
   await withMockServer(
     () =>
@@ -2028,29 +2076,65 @@ test("service Family sharing sends explicit share and unshare bodies", async () 
   );
 });
 
-
 test("an idempotent replay of superseded progress is not a delivery failure", async () => {
   const originalFetch = globalThis.fetch;
-  globalThis.fetch = async () => Response.json({accepted: 0, failed: 0, queued: 0, superseded: 1, idempotent: true, activity: {id: "act_progress", sequence: 3}});
+  globalThis.fetch = async () =>
+    Response.json({
+      accepted: 0,
+      failed: 0,
+      queued: 0,
+      superseded: 1,
+      idempotent: true,
+      activity: { id: "act_progress", sequence: 3 },
+    });
   try {
-    const result = await execute(["activity", "update", "act_progress", "--status", "Compiling", "--idempotency-key", "compile-event"], {NOTIFY_TOKEN: "ntf_test"});
+    const result = await execute(
+      [
+        "activity",
+        "update",
+        "act_progress",
+        "--status",
+        "Compiling",
+        "--idempotency-key",
+        "compile-event",
+      ],
+      { NOTIFY_TOKEN: "ntf_test" },
+    );
     assert.equal(result.exitCode, 0);
     assert.equal(result.body.superseded, 1);
-  } finally { globalThis.fetch = originalFetch; }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });
 
 test("notify connect accepts PROXY v1/v2 and rejects invalid values before opening a tunnel", async () => {
   for (const proxyProtocol of ["v1", "v2"]) {
-    const result = await execute(["connect", "3000", "--name", "work", "--proxy-protocol", proxyProtocol], { NOTIFY_TOKEN: "ntf_test" }, {
-      detach: true,
-      connector: { connectInternal: async (options) => {
-        assert.deepEqual(options.routes.work, { target: "127.0.0.1:3000", proxyProtocol });
-        return { connector: { id: "conn_test", name: "work" }, routes: [], close: async () => {} };
-      } },
-    });
+    const result = await execute(
+      ["connect", "3000", "--name", "work", "--proxy-protocol", proxyProtocol],
+      { NOTIFY_TOKEN: "ntf_test" },
+      {
+        detach: true,
+        connector: {
+          connectInternal: async (options) => {
+            assert.deepEqual(options.routes.work, { target: "127.0.0.1:3000", proxyProtocol });
+            return {
+              connector: { id: "conn_test", name: "work" },
+              routes: [],
+              close: async () => {},
+            };
+          },
+        },
+      },
+    );
     assert.equal(result.exitCode, 0);
   }
-  for (const value of ["v3", "yes", ""]) await assert.rejects(execute(["connect", "3000", "--name", "work", "--proxy-protocol", value], { NOTIFY_TOKEN: "ntf_test" }), /--proxy-protocol (must be v1 or v2|requires a value)/);
+  for (const value of ["v3", "yes", ""])
+    await assert.rejects(
+      execute(["connect", "3000", "--name", "work", "--proxy-protocol", value], {
+        NOTIFY_TOKEN: "ntf_test",
+      }),
+      /--proxy-protocol (must be v1 or v2|requires a value)/,
+    );
 });
 
 test("activity milestone priority is opt-in, validated, and sent unchanged", async () => {
@@ -2062,13 +2146,21 @@ test("activity milestone priority is opt-in, validated, and sent unchanged", asy
   };
   try {
     const env = { NOTIFY_TOKEN: "ntf_test", NOTIFY_API_URL: "https://example.test" };
-    const result = await execute(["activity", "update", "act_1", "--status", "Ready", "--priority", "high"], env);
+    const result = await execute(
+      ["activity", "update", "act_1", "--status", "Ready", "--priority", "high"],
+      env,
+    );
     assert.equal(result.body.apnsPriority, 10);
     assert.equal(result.body.priorityReason, "milestone");
     assert.deepEqual(calls[0], { status: "Ready", priority: "high" });
     await execute(["activity", "update", "act_1", "--status", "Routine"], env);
     assert.equal(Object.hasOwn(calls[1], "priority"), false);
-    await assert.rejects(execute(["activity", "update", "act_1", "--status", "Ready", "--priority", "urgent"], env), /priority must be normal or high/);
+    await assert.rejects(
+      execute(["activity", "update", "act_1", "--status", "Ready", "--priority", "urgent"], env),
+      /priority must be normal or high/,
+    );
     assert.equal(calls.length, 2);
-  } finally { globalThis.fetch = originalFetch; }
+  } finally {
+    globalThis.fetch = originalFetch;
+  }
 });

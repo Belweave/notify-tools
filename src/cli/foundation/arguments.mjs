@@ -96,6 +96,8 @@ export function parseArgs(argv) {
     "unread",
     "no-icon",
     "no-project",
+    "public-client",
+    "private-client",
     "personal",
     "all",
     "no-notify",

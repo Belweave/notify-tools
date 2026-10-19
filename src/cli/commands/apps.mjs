@@ -13,6 +13,9 @@ export async function handleApps(context) {
     else if (action === "revoke") {
       body = await appsRequest(config, `${path}/revoke`, { method: "POST" });
     } else {
+      if (options["public-client"] && options["private-client"]) {
+        throw new UsageError("--public-client and --private-client cannot be used together");
+      }
       if (options.icon && options["no-icon"]) {
         throw new UsageError("--icon and --no-icon cannot be used together");
       }
@@ -26,10 +29,12 @@ export async function handleApps(context) {
         ...(options["no-icon"] ? { iconUrl: null } : {}),
         ...(options.project ? { project: options.project } : {}),
         ...(options["no-project"] ? { project: null } : {}),
+        ...(options["public-client"] ? { publicClient: true } : {}),
+        ...(options["private-client"] ? { publicClient: false } : {}),
       };
       if (Object.keys(payload).length === 0) {
         throw new UsageError(
-          "apps update requires --name, --url, --icon, --no-icon, --project, or --no-project",
+          "apps update requires --name, --url, --icon, --no-icon, --project, --no-project, --public-client, or --private-client",
         );
       }
       body = await appsRequest(config, path, {

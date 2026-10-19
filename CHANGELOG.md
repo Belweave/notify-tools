@@ -1,3 +1,9 @@
+# Notify Tools 0.14.0
+
+- Let website owners enable public Notify sign-in with `apps update --public-client`, retaining one stable app ID across unrelated accounts.
+- Add `--private-client` to disable public eligibility. Each viewer still approves their own sign-in and optional profile sharing.
+- Document private publisher controls, independent storage and consent, and existing website-session revocation limits. Requires the matching Notify backend; iOS 1.5.9 records public launches in Apps.
+
 # Notify Tools 0.13.0
 
 - Add versioned Live Activity design configurations, an offline template catalog, config generation and validation, and file-based configuration for progress and decision commands.
