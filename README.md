@@ -9,12 +9,12 @@ The command line, microAuth() SDK, service connector, and coding-agent integrati
 Requires **Node.js 22.13 or newer**. Download the archive and checksum file for the exact release, verify them, then inspect and run the installer. No npm packages need to be installed.
 
 ```sh
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.13.0/notify-tools-0.13.0.tar.gz
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.13.0/SHA256SUMS
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.0/notify-tools-0.14.0.tar.gz
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.0/SHA256SUMS
 shasum -a 256 -c SHA256SUMS
-mkdir notify-tools-0.13.0
-tar -xzf notify-tools-0.13.0.tar.gz -C notify-tools-0.13.0
-cd notify-tools-0.13.0
+mkdir notify-tools-0.14.0
+tar -xzf notify-tools-0.14.0.tar.gz -C notify-tools-0.14.0
+cd notify-tools-0.14.0
 node install.mjs --dry-run
 node install.mjs
 export PATH="$HOME/.local/bin:$PATH"
@@ -45,7 +45,7 @@ See the [complete CLI reference](https://notify.belweave.ai/docs/cli) for flags 
 
 ### Live Activity designs
 
-Notify Tools 0.13.0 includes nine curated templates with automatic light/dark appearance,
+Notify Tools 0.14.0 includes nine curated templates with automatic light/dark appearance,
 compact or comfortable spacing, semantic emphasis, and optional detail/symbol display.
 The template catalog and validation commands run offline. New rendering also requires
 the matching Notify backend and iOS app; this repository does not deploy either component.
@@ -86,6 +86,29 @@ Notify account sign-in uses Clerk. `notify auth login` still opens Notify's brow
 Use `https://notify.belweave.ai/mcp`. An OAuth-capable client should follow the endpoint's protected-resource and authorization-server discovery metadata. A client with a private bearer-header setting can alternatively use a Notify API key as `Authorization: Bearer <key>`; store the key in that client's secret store. Existing Notify OAuth credentials continue to work during migration.
 
 If a client asks for a static OAuth client ID despite dynamic registration support, register an OAuth application in the production Clerk Dashboard and configure that ID in the client. Obtain the client's exact callback URI first, register that URI verbatim, and enable the scopes the client needs. Use a client secret only when the registered client and host require one, entered through the host's private secret setting. A missing callback URI cannot be guessed from the MCP server URL. Discovery's advertised endpoints remain authoritative; do not hard-code a token endpoint or manually exchange tokens. Check the discovery metadata, callback match, requested scopes, and client authentication method when diagnosing setup failures. The CLI browser approval flow does not require an OAuth client ID or secret.
+
+## Distribute a public website client
+
+Registrations are private by default. The owner of a personal registration can
+allow any signed-in Notify user to open its stable app ID:
+
+```sh
+notify apps update app_REGISTERED_ID --public-client --json
+notify apps update app_REGISTERED_ID --private-client --json
+```
+
+Share `belweave-notify://web/app_REGISTERED_ID`. Notify iOS 1.5.9 adds deliberate
+public opens to each viewer's library. Keep the website verifier pinned to this
+same app ID and origin; viewers should not register separate copies. Everyone
+approves sign-in independently and can decline optional profile details.
+
+This grants launch/sign-in eligibility, not publisher management, team access,
+or public-directory discovery. Disable public mode before moving the app into a
+team. Disabling resets consent and storage generations and blocks future
+nonowner passes. Already delivered passes expire within two minutes; the website
+must manage its own established sessions. Each user can revoke their own consent
+in Notify. This setting does not change packaged Mini Apps or establish Android
+microAuth support.
 
 ## Add microAuth() to a website
 

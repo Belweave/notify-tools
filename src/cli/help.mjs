@@ -77,7 +77,7 @@ export function help() {
   notify apps list [--json]
   notify apps get <app_id> [--json]
   notify apps update <app_id> [--name <name>] [--url <url>] [--icon <url> | --no-icon]
-                      [--project <name> | --no-project] [--json]
+                      [--project <name> | --no-project] [--public-client | --private-client] [--json]
   notify apps revoke <app_id> [--json]
   notify apps remove <app_id> [--json]
   notify apps share <app_id> (--team <team_id> | --personal) [--no-notify] [--json]
@@ -161,8 +161,13 @@ iPhone app, which hands the page a short-lived signed Notify pass. Creating an a
 existing URL updates it. notify send --app <app_id> opens that app when tapped; --url must
 then be on the app's origin.
 
-apps update changes metadata only; sharing and sign-in approval are decided on the phone,
+apps update changes registration metadata and optional public-client eligibility;
+profile sharing and sign-in approval are decided on the phone,
 and moving an app to a new origin asks for approval again. apps revoke signs the app out.
+The owner can use apps update --public-client to let any signed-in Notify user open
+the same app ID and approve microAuth independently. --private-client disables it.
+Public clients must be personal registrations. Public access grants no management
+or team rights and does not publish a global directory listing.
 
 webhooks saves HTTPS endpoints for prompt replies. --stdin accepts headers and event
 subscriptions as JSON; keep credential header values out of shell arguments. Create and
