@@ -1,3 +1,9 @@
+# Notify Tools 0.14.2
+
+- Require patched Node.js 22.23.4+, 24.22.1+ or 26.12.1+ within those supported major lines, incorporating the October 21, 2026 security updates including the Brotli decoder RCE fix.
+- Reject vulnerable patches, unsupported majors and prereleases before CLI commands, connector startup or installation. The installer bundles its runtime policy and remains dependency-free.
+- Pin CI to Node.js 22.23.4, 24.22.1 and 26.12.1; build releases on 22.23.4. Browser and non-Node server SDK entrypoints keep their portability.
+
 # Notify Tools 0.14.1
 
 - Preserve connector tunnel identities, hostnames and certificates across unchanged restarts in a private XDG store. Add explicit `removeTunnel()` retirement; failed deletion retains credentials for retry.

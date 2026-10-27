@@ -6,15 +6,15 @@ The command line, microAuth() SDK, service connector, and coding-agent integrati
 
 ## Install
 
-Requires **Node.js 22.13 or newer**. Download the archive and checksum file for the exact release, verify them, then inspect and run the installer. No npm packages need to be installed.
+Requires **Node.js 22.23.4+, 24.22.1+ or 26.12.1+ within those supported major lines**. Older patches, odd-numbered releases, prereleases and untested future majors are refused by the CLI, installer and connector. These floors include the [October 21, 2026 Node.js security fixes](https://nodejs.org/en/blog/vulnerability/october-2026-security-releases), including the Brotli decoder RCE fix. The SDK browser and non-Node server entrypoints remain portable. Download the archive and checksum file for the exact release, verify them, then inspect and run the installer. No npm packages need to be installed.
 
 ```sh
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.1/notify-tools-0.14.1.tar.gz
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.1/SHA256SUMS
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.2/notify-tools-0.14.2.tar.gz
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.2/SHA256SUMS
 shasum -a 256 -c SHA256SUMS
-mkdir notify-tools-0.14.1
-tar -xzf notify-tools-0.14.1.tar.gz -C notify-tools-0.14.1
-cd notify-tools-0.14.1
+mkdir notify-tools-0.14.2
+tar -xzf notify-tools-0.14.2.tar.gz -C notify-tools-0.14.2
+cd notify-tools-0.14.2
 node install.mjs --dry-run
 node install.mjs
 export PATH="$HOME/.local/bin:$PATH"
@@ -45,7 +45,7 @@ See the [complete CLI reference](https://notify.belweave.ai/docs/cli) for flags 
 
 ### Live Activity designs
 
-Notify Tools 0.14.1 includes nine curated templates with automatic light/dark appearance,
+Notify Tools 0.14.2 includes nine curated templates with automatic light/dark appearance,
 compact or comfortable spacing, semantic emphasis, and optional detail/symbol display.
 The template catalog and validation commands run offline. New rendering also requires
 the matching Notify backend and iOS app; this repository does not deploy either component.

@@ -1,9 +1,12 @@
 #!/usr/bin/env node
 // SPDX-License-Identifier: Apache-2.0
+import { assertSupportedNode } from "../src/runtime/node.mjs";
 import { readFile, mkdir, lstat, readlink, cp, symlink, chmod, rename } from "node:fs/promises";
 import { dirname, resolve, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { homedir } from "node:os";
+
+assertSupportedNode();
 
 const source = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
@@ -21,9 +24,6 @@ for (let index = 0; index < args.length; index++) {
     prefix = resolve(args[++index]);
   else throw new Error(`Unknown or incomplete option: ${args[index]}`);
 }
-const major = Number(process.versions.node.split(".")[0]);
-if (major < 22 || (major === 22 && Number(process.versions.node.split(".")[1]) < 13))
-  throw new Error("Node.js 22.13 or newer is required.");
 if (process.platform === "win32")
   throw new Error("On Windows, run node cli/notify.mjs directly from the extracted release.");
 const manifest = JSON.parse(await readFile(join(source, "manifest.json"), "utf8"));

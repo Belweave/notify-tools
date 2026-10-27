@@ -1,7 +1,10 @@
+import { assertSupportedNode } from "../src/runtime/node.mjs";
 import { createHash } from 'node:crypto';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
+
+assertSupportedNode();
 
 // Publish existing release bytes; never rebuild or silently replace a version.
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');

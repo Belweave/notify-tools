@@ -1,9 +1,12 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertSupportedNode } from "../src/runtime/node.mjs";
 import { build } from "esbuild";
 import { execFileSync } from "node:child_process";
 import { readFile, writeFile, mkdir, readdir, cp, chmod, rename } from "node:fs/promises";
 import { dirname, resolve, relative, join } from "node:path";
 import { fileURLToPath } from "node:url";
+
+assertSupportedNode();
 
 const root = resolve(dirname(fileURLToPath(import.meta.url)), "..");
 process.chdir(root);
@@ -148,7 +151,13 @@ await writeFile(
 );
 for (const name of ["LICENSE", "README.md", "skills"])
   await cp(name, `dist/${name}`, { recursive: true });
-await cp("scripts/install.mjs", "dist/install.mjs");
+await build({
+  ...common,
+  platform: "node",
+  splitting: false,
+  entryPoints: { install: "scripts/install.mjs" },
+  outdir: "dist",
+});
 await mkdir("dist/examples/microauth", { recursive: true });
 await writeFile(
   "dist/examples/microauth/node-session.mjs",
