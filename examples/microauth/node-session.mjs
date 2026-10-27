@@ -1,4 +1,4 @@
-/** Node 22.13+, one SQLite-backed server process behind your HTTPS reverse proxy.
+/** Patched Node 22.23.4+, 24.22.1+ or 26.12.1+ within those major lines, one SQLite-backed server process behind your HTTPS reverse proxy.
  * Run after pnpm build with APP_ORIGIN=https://your.site NOTIFY_APP_ID=app_... .
  * Mount /auth/* on the SAME origin as your frontend. Keep the DB on persistent disk.
  */
