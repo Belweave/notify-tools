@@ -6,6 +6,8 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { once } from "node:events";
 import { expect, it } from "vitest";
+import { OpenTunnelStorage } from "@opentunnel/client/effect";
+import { promiseTunnelStorage } from "./storage-fixture.js";
 import { defaultTunnelFactory } from "../../src/connector/transport/tunnel.js";
 
 it("isolates concurrent relay credentials without changing global fetch", async () => {
@@ -26,6 +28,7 @@ it("isolates concurrent relay credentials without changing global fetch", async 
           token,
           routes: { app: "localhost:3000" },
           relayApi: "https://relay.example",
+          tunnelStorage: promiseTunnelStorage(OpenTunnelStorage.memory()),
         },
         { app: "localhost:3000" },
         send,
