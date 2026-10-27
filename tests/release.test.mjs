@@ -165,6 +165,32 @@ void [connectMicroAuth, supportsMicroAuth, connectInternal, honoNotifyPass, draf
   }
 });
 
+test("release CLI, installer and connector enforce patched Node without external policy files", async () => {
+  const folder = await mkdtemp(join(tmpdir(), "notify runtime release "));
+  try {
+    const release = join(folder, "release");
+    await cp(source, release, { recursive: true });
+    const preload = join(folder, "version.mjs");
+    for (const version of ["22.23.3", "24.22.0", "26.12.0", "25.0.0"]) {
+      await writeFile(preload, `Object.defineProperty(process.versions, "node", { value: ${JSON.stringify(version)} });`);
+      for (const entry of ["cli/notify.mjs", "install.mjs"]) {
+        const result = node(["--import", preload, join(release, entry), "--help"], { cwd: folder });
+        assert.notEqual(result.status, 0, `${entry} accepted ${version}`);
+        assert.match(result.stderr, /Node\.js.*22\.23\.4.*24\.22\.1.*26\.12\.1/);
+        assert.doesNotMatch(result.stderr, /ERR_MODULE_NOT_FOUND/);
+      }
+      const connector = node(["--import", preload, "--input-type=module", "-e", `
+        import assert from 'node:assert/strict';
+        import { connectInternal } from ${JSON.stringify(pathToFileURL(join(release, "sdk/connector.mjs")).href)};
+        await assert.rejects(connectInternal({ name: 'fixture', token: 'fixture', routes: { app: '127.0.0.1:3000' } }), /Node\\.js/);
+      `], { cwd: folder });
+      assert.equal(connector.status, 0, connector.stdout + connector.stderr);
+    }
+  } finally {
+    await rm(folder, { recursive: true, force: true });
+  }
+});
+
 test("installer preserves releases, supports spaces, and rejects unrelated binaries", async () => {
   const folder = await mkdtemp(join(tmpdir(), "notify install "));
   try {

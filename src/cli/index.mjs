@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertSupportedNode } from "../runtime/node.mjs";
 import { parseArgs } from "./foundation/arguments.mjs";
 import { RequestError, UsageError } from "./foundation/errors.mjs";
 import { sleep } from "./foundation/results.mjs";
@@ -32,6 +33,7 @@ const commandModules = {
 commandModules.notify = commandModules.send;
 
 export async function execute(argv, env = process.env, overrides = {}) {
+  assertSupportedNode();
   const { positionals, options, separatorAt } = parseArgs(argv);
   if (options.help || positionals.length === 0)
     return { body: { help: help() }, exitCode: 0, text: true };

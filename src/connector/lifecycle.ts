@@ -1,4 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
+import { assertSupportedNode } from "../runtime/node.mjs";
 import {
   isRouteName,
   DEFAULT_RELAY_DOMAIN,
@@ -14,6 +15,7 @@ import { type AccessGateway, type AccessIdentity, createAccessGateway } from "./
 export const DEFAULT_API = "https://notify.belweave.ai";
 
 export async function connectInternal(options: ConnectOptions): Promise<ConnectorHandle> {
+  assertSupportedNode();
   for (const name of Object.keys(options.routes)) {
     if (!isRouteName(name)) {
       throw new Error(`Invalid route name: ${name}`);
