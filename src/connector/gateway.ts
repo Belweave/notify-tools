@@ -15,6 +15,20 @@ const COOKIE = "__Host-notify_session";
 const EXCHANGE = "/.notify/session";
 const CALLBACK = "/.notify/callback";
 const MAX_SESSIONS = 1024;
+const FORWARDING_HEADERS = new Set([
+  "forwarded",
+  "via",
+  "x-real-ip",
+  "client-ip",
+  "x-client-ip",
+  "x-cluster-client-ip",
+  "x-originating-ip",
+  "x-remote-ip",
+  "x-remote-addr",
+  "true-client-ip",
+  "cf-connecting-ip",
+]);
+const FORWARDING_PREFIXES = ["x-forwarded-", "x-original-forwarded-", "cf-"];
 export interface AccessIdentity {
   subject: string;
   appId: string;
@@ -101,8 +115,9 @@ function cleanHeaders(
     if (
       hop.has(key) ||
       key.startsWith("x-notify-") ||
-      key.startsWith("x-forwarded-") ||
-      ["authorization", "forwarded", "host", "cookie"].includes(key)
+      FORWARDING_HEADERS.has(key) ||
+      FORWARDING_PREFIXES.some((prefix) => key.startsWith(prefix)) ||
+      ["authorization", "host", "cookie"].includes(key)
     )
       continue;
     headers[key] = value;
@@ -159,6 +174,15 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
     return proxyUpstreamAgent(target, header);
   };
   const sessions = new Map<string, Session>();
+  let pendingExchanges = 0;
+  let nextSessionSweep = 0;
+  const pruneSessions = (force = false) => {
+    const now = Date.now();
+    if (!force && now < nextSessionSweep) return;
+    nextSessionSweep = now + 5_000;
+    for (const [id, session] of sessions)
+      if (session.identity.expiresAt <= now / 1000) sessions.delete(id);
+  };
   const sockets = new Set<Duplex>();
   let origin: URL | undefined;
   const authorize = async (pass: string, consume: boolean) =>
@@ -191,6 +215,7 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
     return session.checking;
   };
   const getSession = async (req: IncomingMessage): Promise<Session> => {
+    pruneSessions();
     if (!origin || req.headers.host !== origin.host) throw new Error("Access denied");
     const id = cookieSession(req);
     const session = id ? sessions.get(id) : undefined;
@@ -245,18 +270,33 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
     stream.once("close", cleanup);
     return cleanup;
   };
-  const server = createServer(async (req, res) => {
+  const server = createServer((req, res) => {
+    void handleRequest(req, res).catch(() => {
+      console.error("Connector request failed");
+      if (!res.headersSent) res.writeHead(502).end("Connector error");
+      else res.destroy();
+    });
+  });
+  const handleRequest = async (req: IncomingMessage, res: import("node:http").ServerResponse) => {
     res.setHeader("cache-control", "no-store");
     res.setHeader("referrer-policy", "no-referrer");
     res.setHeader("x-content-type-options", "nosniff");
+    res.setHeader("x-frame-options", "SAMEORIGIN");
+    res.setHeader("strict-transport-security", "max-age=31536000");
     if (!origin || req.headers.host !== origin.host) {
       res.writeHead(503).end("Connector unavailable");
       return;
     }
-    // SameSite cookies alone do not stop a sibling route making same-site requests.
+    const isDocumentNavigation =
+      ["GET", "HEAD"].includes(req.method ?? "") &&
+      (!req.headers["sec-fetch-dest"] || req.headers["sec-fetch-dest"] === "document") &&
+      (req.headers.accept ?? "").includes("text/html");
+    // SameSite cookies do not stop sibling-route subresources. Document navigations
+    // may reach sign-in, but a supplied Origin must still match exactly.
     if (
       (req.headers.origin && req.headers.origin !== origin.origin) ||
-      ["same-site", "cross-site"].includes(String(req.headers["sec-fetch-site"]))
+      (!isDocumentNavigation &&
+        ["same-site", "cross-site"].includes(String(req.headers["sec-fetch-site"])))
     ) {
       res.writeHead(403).end("Cross-origin access denied");
       return;
@@ -355,6 +395,7 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
         res.writeHead(403).end();
         return;
       }
+      let reserved = false;
       try {
         let body = "";
         for await (const chunk of req) {
@@ -363,9 +404,16 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
         }
         const { pass } = JSON.parse(body);
         if (typeof pass !== "string" || pass.length > 12_000) throw new Error("Invalid pass");
-        for (const [id, session] of sessions)
-          if (session.identity.expiresAt <= Date.now() / 1000) sessions.delete(id);
-        if (sessions.size >= MAX_SESSIONS) throw new Error("Full");
+        pruneSessions(true);
+        if (sessions.size + pendingExchanges >= MAX_SESSIONS) {
+          res.setHeader("retry-after", "5");
+          res.writeHead(503).end("Connector session capacity reached");
+          return;
+        }
+        // Reserve before the asynchronous one-time claim so concurrent exchanges
+        // cannot exceed the bound or consume a pass for an unavailable slot.
+        pendingExchanges++;
+        reserved = true;
         const identity = await authorize(pass, true);
         const id = randomBytes(32).toString("base64url");
         sessions.set(id, { pass, identity });
@@ -376,6 +424,8 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
         res.writeHead(204).end();
       } catch {
         res.writeHead(401).end("Access denied");
+      } finally {
+        if (reserved) pendingExchanges--;
       }
       return;
     }
@@ -390,11 +440,7 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
     try {
       session = await getSession(req);
     } catch {
-      if (
-        req.method === "GET" &&
-        (req.headers.accept ?? "").includes("text/html") &&
-        (!req.headers["sec-fetch-dest"] || req.headers["sec-fetch-dest"] === "document")
-      ) {
+      if (req.method === "GET" && isDocumentNavigation) {
         const nonce = randomBytes(18).toString("base64url");
         res.setHeader(
           "content-security-policy",
@@ -415,14 +461,40 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
         headers: cleanHeaders(req, target, origin, session.identity, false),
       },
       (response) => {
-        const headers = { ...response.headers, "cache-control": "no-store" };
-        delete headers["set-cookie"];
-        const cookies = response.headers["set-cookie"]?.filter(
-          (s) => !/^\s*(?:__Host-notify_|notify_)/i.test(s),
-        );
-        if (cookies?.length) headers["set-cookie"] = cookies;
-        res.writeHead(response.statusCode ?? 502, headers);
-        response.pipe(res);
+        let failed = false;
+        const fail = () => {
+          if (failed) return;
+          failed = true;
+          console.error("Connector upstream response failed");
+          if (!res.headersSent) res.writeHead(502).end("Connector error");
+          else res.destroy();
+          response.destroy();
+        };
+        response.once("aborted", fail);
+        response.once("error", fail);
+        // Response callbacks run after handleRequest's promise has settled.
+        try {
+          const headers: OutgoingHttpHeaders = { ...response.headers, "cache-control": "no-store" };
+          // An explicit upstream framing policy takes precedence over the default.
+          const csp = response.headers["content-security-policy"];
+          const hasFrameAncestors = /(?:^|;)\s*frame-ancestors(?:\s|$)/i.test(
+            Array.isArray(csp) ? csp.join(";") : (csp ?? ""),
+          );
+          res.removeHeader("x-frame-options");
+          if (headers["x-frame-options"] === undefined && !hasFrameAncestors)
+            headers["x-frame-options"] = "SAMEORIGIN";
+          if (headers["strict-transport-security"] === undefined)
+            headers["strict-transport-security"] = "max-age=31536000";
+          delete headers["set-cookie"];
+          const cookies = response.headers["set-cookie"]?.filter(
+            (s) => !/^\s*(?:__Host-notify_|notify_)/i.test(s),
+          );
+          if (cookies?.length) headers["set-cookie"] = cookies;
+          res.writeHead(response.statusCode ?? 502, headers);
+          response.pipe(res);
+        } catch {
+          fail();
+        }
       },
     );
     upstream.on("error", () => {
@@ -435,8 +507,15 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
       upstream.destroy();
     });
     req.pipe(upstream);
+  };
+  server.on("upgrade", (req, socket, head) => {
+    void handleUpgrade(req, socket, head).catch(() => {
+      console.error("Connector WebSocket upgrade failed");
+      if (!socket.destroyed)
+        socket.end("HTTP/1.1 502 Bad Gateway\r\nConnection: close\r\n\r\n", () => socket.destroy());
+    });
   });
-  server.on("upgrade", async (req, socket, head) => {
+  const handleUpgrade = async (req: IncomingMessage, socket: Duplex, head: Buffer) => {
     socket.on("error", () => socket.destroy());
     if (
       !origin ||
@@ -500,7 +579,7 @@ export async function createAccessGateway(options: GatewayOptions): Promise<Acce
     upstream.on("error", () => socket.destroy());
     socket.once("close", () => upstream.destroy());
     upstream.end();
-  });
+  };
   const proxyProtocol = options.proxyProtocol;
   if (proxyProtocol) {
     // Keep the HTTP server's real listen lifecycle (including its header/request

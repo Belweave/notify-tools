@@ -9,12 +9,12 @@ The command line, microAuth() SDK, service connector, and coding-agent integrati
 Requires **Node.js 22.13 or newer**. Download the archive and checksum file for the exact release, verify them, then inspect and run the installer. No npm packages need to be installed.
 
 ```sh
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.0/notify-tools-0.14.0.tar.gz
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.0/SHA256SUMS
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.1/notify-tools-0.14.1.tar.gz
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.14.1/SHA256SUMS
 shasum -a 256 -c SHA256SUMS
-mkdir notify-tools-0.14.0
-tar -xzf notify-tools-0.14.0.tar.gz -C notify-tools-0.14.0
-cd notify-tools-0.14.0
+mkdir notify-tools-0.14.1
+tar -xzf notify-tools-0.14.1.tar.gz -C notify-tools-0.14.1
+cd notify-tools-0.14.1
 node install.mjs --dry-run
 node install.mjs
 export PATH="$HOME/.local/bin:$PATH"
@@ -45,7 +45,7 @@ See the [complete CLI reference](https://notify.belweave.ai/docs/cli) for flags 
 
 ### Live Activity designs
 
-Notify Tools 0.14.0 includes nine curated templates with automatic light/dark appearance,
+Notify Tools 0.14.1 includes nine curated templates with automatic light/dark appearance,
 compact or comfortable spacing, semantic emphasis, and optional detail/symbol display.
 The template catalog and validation commands run offline. New rendering also requires
 the matching Notify backend and iOS app; this repository does not deploy either component.
@@ -201,9 +201,29 @@ the relay socket, not caller-supplied HTTP forwarding headers; they are network
 metadata, not an authorization identity.
 
 The 0.5.1 client brings reconnect and transient-failure handling. Notify keeps its
-Cloudflare relay and AWS backend. Tunnel and certificate state remain in memory
-for the connector's lifetime; no persistent identity or certificate reuse across
-restarts is configured.
+Cloudflare relay and AWS backend. Tunnel identity, private key, certificate and
+pending CSR persist under `$XDG_DATA_HOME/opentunnel/<profile>` (fallback
+`~/.local/share/opentunnel`), with 0700 profile directories and 0600 files.
+Unchanged credentials and configuration reuse the tunnel ID, hostname and
+certificate across restarts; pending CSR bundles resume after interruption.
+The hashed profile includes relay/Notify origins, token hash, team, connector
+name and original route configuration, excluding random loopback gateway ports.
+Changing those inputs selects a new identity and hostname. SDK options
+`tunnelProfile` and `tunnelStorage` allow explicit control. Custom storage implements
+the exported Promise-based `TunnelStorage` interface, including complete ready
+and pending identities, listing and removal; raw SDK Effect storage is adapted
+internally. Ephemeral storage is intended for tests.
+
+Routine `connection.close()` preserves the identity. To retire it deliberately,
+call `connection.removeTunnel()`: this offlines/closes the connector, deletes the
+remote tunnel with its per-tunnel token, then removes local credentials only
+after success. Failed deletion retains credentials for retry. Custom tunnel
+factories must provide `TunnelSession.remove` for that opt-in API.
+Run only one process for an identical profile. Incomplete credential bundles fail
+closed and require operator recovery; they are never silently overwritten.
+Initial persistence failure attempts remote cleanup, but simultaneous storage
+and cleanup failure requires reconciliation. Historical orphan tunnels are not
+automatically pruned.
 
 ### Mandatory access gateway
 
@@ -233,15 +253,39 @@ and streaming responses recheck at most every 15 seconds and close at expiry.
 A revocation therefore stops new requests immediately and existing streams
 within 15 seconds plus the authorization timeout (5 seconds).
 
-The gateway strips inbound Authorization and caller-supplied `x-notify-*` and
-forwarding headers. It removes its session cookie before proxying and sets these
+HTML document navigation from sibling or external sites reaches the sign-in
+prompt, or a live revalidated session. Same-site and cross-site subresources,
+iframes and mutations remain forbidden. Mismatched Origin/Host checks remain
+strict; navigation never bypasses authorization.
+
+The gateway strips inbound Authorization and caller-supplied `x-notify-*`.
+HTTP and WebSocket forwarding also removes `Forwarded`, `Via`, `X-Real-IP`,
+`Client-IP`, `X-Client-IP`, `X-Cluster-Client-IP`, `X-Originating-IP`, `X-Remote-IP`,
+`X-Remote-Addr`, `True-Client-IP`, `CF-Connecting-IP`, and all `X-Forwarded-*`,
+`X-Original-Forwarded-*` and `CF-*` headers, including `CF-IPCountry`.
+It synthesizes only `X-Forwarded-Host` and `X-Forwarded-Proto`; use opt-in PROXY
+protocol for a trusted visitor address. Upstreams that previously read these
+caller-controlled address/geolocation headers must use transport metadata.
+It removes its session cookie before proxying and sets these
 verified upstream headers: `x-notify-subject`, `x-notify-app-id`, and, for teams,
 `x-notify-team-id` and `x-notify-team-role`. Employer services may trust these
 only when direct access to their upstream listener is restricted to this gateway.
 Ordinary application cookies remain application-local. Protected responses use
-`Cache-Control: no-store`; a saved device copy is subject to the mobile app's
-workspace data removal, not a remote device wipe. Mutating requests and browser
-WebSocket upgrades require an exact matching `Origin`.
+`Cache-Control: no-store`. Responses default to `X-Frame-Options: SAMEORIGIN`
+and `Strict-Transport-Security: max-age=31536000`, without `includeSubDomains`.
+Explicit upstream XFO, HSTS and CSP framing policies are preserved. The sign-in
+page keeps its tighter `frame-ancestors 'none'` CSP; no full CSP is imposed on
+employer applications.
+
+The 1024-session bound includes exchanges awaiting authorization. Capacity
+returns 503 with `Retry-After: 5` before consuming a pass; invalid authorization
+remains 401. Expired sessions are pruned on exchange and at most every five
+seconds during lookup. Proxy construction, invalid upstream status and aborted
+responses return 502 before headers, or close an already-started response, with
+bounded logs that omit URLs and credentials.
+A saved device copy is subject to the mobile app's workspace data removal,
+not a remote device wipe. Mutating requests and browser WebSocket upgrades
+require an exact matching `Origin`.
 
 Machine callbacks have a separate, fixed ingress: `POST /.notify/callback`.
 The gateway sends the exact UTF-8 JSON body (at most 64 KiB), timestamp and HMAC

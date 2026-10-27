@@ -3,15 +3,54 @@ import { connect } from "node:net";
 import { afterEach, expect, it, vi } from "vitest";
 import { type AccessIdentity, createAccessGateway } from "../../src/connector/gateway";
 
+const upstreamFailure = vi.hoisted(() => ({ enabled: false }));
+vi.mock("node:http", async (importOriginal) => {
+  const actual = await importOriginal<typeof import("node:http")>();
+  return {
+    ...actual,
+    request: (...args: unknown[]) => {
+      const options = args[0];
+      if (
+        upstreamFailure.enabled &&
+        options &&
+        typeof options === "object" &&
+        "hostname" in options
+      )
+        throw new Error("Injected upstream construction failure");
+      return (actual.request as (...args: unknown[]) => ReturnType<typeof actual.request>)(...args);
+    },
+  };
+});
 const cleanup: Array<() => Promise<unknown>> = [];
 afterEach(async () => {
   for (const close of cleanup.reverse()) await close();
   cleanup.length = 0;
   vi.useRealTimers();
+  vi.restoreAllMocks();
+  upstreamFailure.enabled = false;
 });
 const origin = "https://work.tunnel.clawchest.com";
 const callbackBody = JSON.stringify({ interactionId: "int_callback", answer: "yes" });
 const callbackSignature = `v1=${"a".repeat(64)}`;
+const forgedForwardingHeaders = Object.fromEntries(
+  [
+    "x-real-ip",
+    "client-ip",
+    "x-client-ip",
+    "x-cluster-client-ip",
+    "x-originating-ip",
+    "x-remote-ip",
+    "x-remote-addr",
+    "true-client-ip",
+    "cf-connecting-ip",
+    "cf-ipcountry",
+    "via",
+    "x-original-forwarded-for",
+    "x-original-forwarded-host",
+    "forwarded",
+    "x-forwarded-for",
+  ].map((name) => [name, "203.0.113.7"]),
+);
 const callbackHeaders = {
   "content-type": "application/json",
   "notify-timestamp": "1791840000",
@@ -21,6 +60,10 @@ async function setup(
   recheckMs = 20,
   callbackPath = "/approval-receiver",
   onCheck?: (pass: string) => Promise<void>,
+  additionalPasses: string[] = [],
+  responseHeaders: Record<string, string> = {},
+  onConsume?: (pass: string) => Promise<void>,
+  rawResponse?: string,
 ) {
   let hits = 0,
     upgrades = 0,
@@ -39,14 +82,21 @@ async function setup(
     req.on("data", (chunk) => {
       receivedBody += chunk;
     });
-    req.on("end", () => res.end("private employer content"));
+    req.on("end", () => {
+      if (rawResponse) {
+        req.socket.end(rawResponse);
+        return;
+      }
+      res.writeHead(200, responseHeaders).end("private employer content");
+    });
   });
   upstream.on("connection", (socket) => {
     upstreamSockets.add(socket);
     socket.on("close", () => upstreamSockets.delete(socket));
   });
-  upstream.on("upgrade", (_req, socket) => {
+  upstream.on("upgrade", (req, socket) => {
     upgrades++;
+    received = req.headers;
     socket.write(
       "HTTP/1.1 101 Switching Protocols\r\nUpgrade: websocket\r\nConnection: Upgrade\r\nSec-WebSocket-Accept: test\r\n\r\n",
     );
@@ -84,13 +134,14 @@ async function setup(
       return { path: callbackPath };
     },
     authorize: async (pass, consume) => {
+      if (consume) await onConsume?.(pass);
       if (!consume) {
         checks++;
         await onCheck?.(pass);
       }
       if (
         revoked ||
-        !["signed-pass", "signed-pass-second"].includes(pass) ||
+        !["signed-pass", "signed-pass-second", ...additionalPasses].includes(pass) ||
         (consume && used.has(pass)) ||
         (!consume && !used.has(pass))
       )
@@ -117,6 +168,8 @@ async function setup(
           (res) => {
             let body = "";
             res.on("data", (chunk) => (body += chunk));
+            res.on("aborted", () => reject(new Error("Response aborted")));
+            res.on("error", reject);
             res.on("end", () =>
               resolve({ status: res.statusCode ?? 0, body, headers: res.headers }),
             );
@@ -190,6 +243,7 @@ it("never forwards missing, invalid, replayed, cross-origin or pre-registration 
     "x-notify-team-id": "evil",
     "x-notify-subject": "admin",
     authorization: "Bearer must-not-forward",
+    ...forgedForwardingHeaders,
   });
   expect(asset.status).toBe(200);
   expect(asset.headers["cache-control"]).toBe("no-store");
@@ -197,11 +251,63 @@ it("never forwards missing, invalid, replayed, cross-origin or pre-registration 
   expect(env.received()["x-notify-subject"]).toBe("pairwise");
   expect(env.received().authorization).toBeUndefined();
   expect(env.received().cookie).toBe("app_session=ok");
+  for (const name of Object.keys(forgedForwardingHeaders))
+    expect(env.received()[name], name).toBeUndefined();
+  expect(env.received()["x-forwarded-host"]).toBe(new URL(origin).host);
+  expect(env.received()["x-forwarded-proto"]).toBe("https");
   env.revoke();
   expect((await env.call("/bundle.js", { cookie })).status).toBe(401);
   expect(env.counts().hits).toBe(1);
 });
-function ws(target: string, cookie?: string, path = "/socket") {
+it("lets sibling and cross-site document navigations reach sign-in or the live session", async () => {
+  const env = await setup();
+  env.gateway.setOrigin(origin);
+  const navigation = { accept: "text/html", "sec-fetch-dest": "document" };
+  for (const site of ["same-site", "cross-site"]) {
+    const headers = { ...navigation, "sec-fetch-site": site };
+    const signedOut = await env.call("/", headers);
+    expect(signedOut.status).toBe(401);
+    expect(signedOut.headers["content-type"]).toContain("text/html");
+    expect(signedOut.body).toContain("Connect with Notify");
+    expect((await env.call("/", headers, undefined, "HEAD")).status).toBe(401);
+  }
+  const cookie = (await env.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  for (const site of ["same-site", "cross-site"]) {
+    const headers = { ...navigation, "sec-fetch-site": site, cookie };
+    expect((await env.call("/", headers)).status).toBe(200);
+    expect((await env.call("/", headers, undefined, "HEAD")).status).toBe(200);
+    for (const badOrigin of ["https://sibling.tunnel.clawchest.com", "null"])
+      expect((await env.call("/", { ...headers, origin: badOrigin })).status).toBe(403);
+    expect((await env.call("/bundle.js", { cookie, "sec-fetch-site": site })).status).toBe(403);
+    expect((await env.call("/", { ...headers, "sec-fetch-dest": "iframe" })).status).toBe(403);
+    expect((await env.call("/", headers, "form", "POST")).status).toBe(403);
+    expect(
+      (
+        await env.call(
+          "/.notify/session",
+          { ...headers, origin, "content-type": "application/json" },
+          '{"pass":"signed-pass-second"}',
+        )
+      ).status,
+    ).toBe(403);
+    expect(
+      (
+        await env.call(
+          "/.notify/callback",
+          { ...callbackHeaders, "sec-fetch-site": site },
+          callbackBody,
+        )
+      ).status,
+    ).toBe(403);
+  }
+  expect(env.counts().hits).toBe(4);
+});
+function ws(
+  target: string,
+  cookie?: string,
+  path = "/socket",
+  headers: Record<string, string> = {},
+) {
   const [host, port] = target.split(":");
   const socket = connect(Number(port), host ?? "127.0.0.1");
   const response = new Promise<string>((resolve, reject) => {
@@ -210,7 +316,11 @@ function ws(target: string, cookie?: string, path = "/socket") {
   });
   socket.on("connect", () =>
     socket.write(
-      `GET ${path} HTTP/1.1\r\nHost: ${new URL(origin).host}\r\nOrigin: ${origin}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGVzdA==\r\n${cookie ? `Cookie: ${cookie}\r\n` : ""}\r\n`,
+      `GET ${path} HTTP/1.1\r\nHost: ${new URL(origin).host}\r\nOrigin: ${origin}\r\nConnection: Upgrade\r\nUpgrade: websocket\r\nSec-WebSocket-Version: 13\r\nSec-WebSocket-Key: dGVzdA==\r\n${cookie ? `Cookie: ${cookie}\r\n` : ""}${Object.entries(
+        headers,
+      )
+        .map(([name, value]) => `${name}: ${value}\r\n`)
+        .join("")}\r\n`,
     ),
   );
   return { socket, response };
@@ -229,6 +339,19 @@ it("blocks unauthenticated WS upgrades and closes authorized sockets on revocati
   const closed = new Promise<void>((resolve) => allowed.socket.once("close", () => resolve()));
   env.revoke();
   await closed;
+});
+it("strips forged forwarding headers from WebSocket upgrades", async () => {
+  const env = await setup();
+  env.gateway.setOrigin(origin);
+  const cookie = (await env.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  const allowed = ws(env.gateway.target, cookie, "/socket", forgedForwardingHeaders);
+  expect(await allowed.response).toContain("101");
+  allowed.socket.destroy();
+  for (const name of Object.keys(forgedForwardingHeaders))
+    expect(env.received()[name], name).toBeUndefined();
+  expect(env.received()["x-notify-subject"]).toBe("pairwise");
+  expect(env.received()["x-forwarded-host"]).toBe(new URL(origin).host);
+  expect(env.received()["x-forwarded-proto"]).toBe("https");
 });
 it("expires sessions and open sockets no later than the signed pass", async () => {
   const env = await setup(15_000);
@@ -378,4 +501,167 @@ it("checks all streams in a session once per interval and closes every stream on
   expect(env.counts().checks).toBe(5);
   await vi.advanceTimersByTimeAsync(15_000);
   expect(env.counts().checks).toBe(5);
+});
+
+it("defaults framing and HSTS headers without overriding upstream policies", async () => {
+  const env = await setup();
+  const unavailable = await env.call("/");
+  expect(unavailable.headers["x-frame-options"]).toBe("SAMEORIGIN");
+  expect(unavailable.headers["strict-transport-security"]).toBe("max-age=31536000");
+  env.gateway.setOrigin(origin);
+  const signIn = await env.call("/", { accept: "text/html" });
+  expect(signIn.headers["content-security-policy"]).toContain("frame-ancestors 'none'");
+  expect(signIn.headers["x-frame-options"]).toBe("SAMEORIGIN");
+  expect(signIn.headers["strict-transport-security"]).toBe("max-age=31536000");
+  const cookie = (await env.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  const proxied = await env.call("/", { cookie });
+  expect(proxied.headers["x-frame-options"]).toBe("SAMEORIGIN");
+  expect(proxied.headers["strict-transport-security"]).toBe("max-age=31536000");
+  expect(proxied.headers["cache-control"]).toBe("no-store");
+  const policies: Record<string, string>[] = [
+    {
+      "x-frame-options": "DENY",
+      "strict-transport-security": "max-age=600",
+      "content-security-policy": "default-src 'self'",
+    },
+    { "content-security-policy": "default-src 'self'; frame-ancestors https://portal.example" },
+  ];
+  for (const policy of policies) {
+    const custom = await setup(15_000, "/approval-receiver", undefined, [], policy);
+    custom.gateway.setOrigin(origin);
+    const customCookie = (await custom.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+    const response = await custom.call("/", { cookie: customCookie });
+    for (const [name, value] of Object.entries(policy)) expect(response.headers[name]).toBe(value);
+    expect(response.headers["x-frame-options"]).toBe(policy["x-frame-options"]);
+    expect(response.headers["cache-control"]).toBe("no-store");
+  }
+});
+it("reports full session capacity as retryable and prunes expired sessions on lookup", async () => {
+  vi.useFakeTimers({ toFake: ["Date"] });
+  const passes = Array.from({ length: 1026 }, (_, index) => `capacity-pass-${index}`);
+  let release!: () => void;
+  let entering!: () => void;
+  const entered = new Promise<void>((resolve) => {
+    entering = resolve;
+  });
+  const pending = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  const env = await setup(15_000, "/approval-receiver", undefined, passes, {}, async (pass) => {
+    if (pass === passes[1023]) {
+      entering();
+      await pending;
+    }
+  });
+  env.gateway.setOrigin(origin);
+  let cookie = "";
+  for (const pass of passes.slice(0, 1023)) {
+    const accepted = await env.exchange(pass);
+    expect(accepted.status).toBe(204);
+    cookie = accepted.headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  }
+  // An invalid pass must release its reservation; the next valid claim may use it.
+  expect((await env.exchange("invalid-pass")).status).toBe(401);
+  const finalSlot = env.exchange(passes[1023]);
+  await entered;
+  try {
+    expect((await env.exchange(passes[1024])).status).toBe(503);
+  } finally {
+    release();
+  }
+  expect((await finalSlot).status).toBe(204);
+  const capacity = await env.exchange(passes[1025]);
+  expect(capacity.status).toBe(503);
+  expect(capacity.headers["retry-after"]).toBe("5");
+  expect(capacity.body).toBe("Connector session capacity reached");
+  vi.setSystemTime(Date.now() + 61_000);
+  expect((await env.call("/", { cookie })).status).toBe(401);
+  env.identity.expiresAt = Math.floor(Date.now() / 1000) + 60;
+  expect((await env.exchange(passes[1025])).status).toBe(204);
+});
+async function bounded<T>(promise: Promise<T>): Promise<T> {
+  let timeout!: ReturnType<typeof setTimeout>;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<never>((_, reject) => {
+        timeout = setTimeout(() => reject(Error("Gateway left the client waiting")), 300);
+      }),
+    ]);
+  } finally {
+    clearTimeout(timeout);
+  }
+}
+it("answers synchronous upstream construction failures with 502", async () => {
+  const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+  const env = await setup(15_000);
+  env.gateway.setOrigin(origin);
+  const cookie = (await env.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  upstreamFailure.enabled = true;
+  const response = await bounded(env.call("/private?token=do-not-log", { cookie }));
+  expect(response.status).toBe(502);
+  expect(response.body).toBe("Connector error");
+  expect(logged).toHaveBeenCalledTimes(1);
+  expect(JSON.stringify(logged.mock.calls)).not.toContain("do-not-log");
+  expect(env.counts().hits).toBe(0);
+});
+it("answers synchronous WebSocket upstream failures and closes the socket", async () => {
+  const logged = vi.spyOn(console, "error").mockImplementation(() => {});
+  const env = await setup(15_000);
+  env.gateway.setOrigin(origin);
+  const cookie = (await env.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  upstreamFailure.enabled = true;
+  const failed = ws(env.gateway.target, cookie);
+  const closed = new Promise<void>((resolve) => failed.socket.once("close", () => resolve()));
+  try {
+    expect(await bounded(failed.response)).toContain("502");
+    await bounded(closed);
+  } finally {
+    failed.socket.destroy();
+  }
+  expect(logged).toHaveBeenCalledTimes(1);
+  expect(env.counts().upgrades).toBe(0);
+});
+
+it("answers invalid upstream status codes without uncaught callback exceptions", async () => {
+  const env = await setup(
+    20,
+    "/approval-receiver",
+    undefined,
+    [],
+    {},
+    undefined,
+    "HTTP/1.1 099 Invalid\r\nContent-Length: 0\r\nConnection: close\r\n\r\n",
+  );
+  env.gateway.setOrigin(origin);
+  const cookie = (await env.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  const result = await Promise.race([
+    env.call("/", { cookie }),
+    new Promise<never>((_, reject) =>
+      setTimeout(() => reject(new Error("Upstream response hung")), 300),
+    ),
+  ]);
+  expect(result.status).toBe(502);
+});
+
+it("closes an aborted upstream response after headers instead of hanging", async () => {
+  const env = await setup(
+    20,
+    "/approval-receiver",
+    undefined,
+    [],
+    {},
+    undefined,
+    "HTTP/1.1 200 OK\r\nContent-Length: 100\r\nConnection: close\r\n\r\nshort",
+  );
+  env.gateway.setOrigin(origin);
+  const cookie = (await env.exchange()).headers["set-cookie"]?.[0]?.split(";")[0] ?? "";
+  await expect(
+    Promise.race([
+      env.call("/", { cookie }),
+      new Promise<never>((_, reject) =>
+        setTimeout(() => reject(new Error("Upstream response hung")), 300),
+      ),
+    ]),
+  ).rejects.toThrow("Response aborted");
 });

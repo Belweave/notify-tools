@@ -81,7 +81,22 @@ test("release runs and typechecks outside the checkout without dependencies", as
       `
 import { connectMicroAuth, supportsMicroAuth, notifyMini } from './release/sdk/browser.mjs';
 import { createMicroAuthServer, createMicroAuthBinding, type MicroAuthChallengeStore } from './release/sdk/server.mjs';
-import { connectInternal, honoNotifyPass } from './release/sdk/connector.mjs';
+import { connectInternal, honoNotifyPass, type TunnelStorage, type TunnelIdentity, type TunnelPendingIdentity } from './release/sdk/connector.mjs';
+const identities = new Map<string, TunnelIdentity>();
+const pending = new Map<string, TunnelPendingIdentity>();
+const tunnelStorage: TunnelStorage = {
+  async profiles() { return [...identities.keys()]; },
+  async load(profile) { return identities.get(profile); },
+  async save(profile, identity) { identities.set(profile, identity); },
+  async loadPending(profile) { return pending.get(profile); },
+  async savePending(profile, identity) { pending.set(profile, identity); },
+  async remove(profile) { identities.delete(profile); pending.delete(profile); },
+  async list() { return [...identities].map(([profile, tunnel]) => ({ profile, tunnel })); },
+};
+// @ts-expect-error A stored identity must retain its private key and certificate metadata.
+const incompleteIdentity: TunnelIdentity = { id: 'tunnel', hostname: 'tunnel.example', token: 'test' };
+const connectorOptions: Parameters<typeof connectInternal>[0] = { token: "fixture", name: "fixture", routes: { app: "127.0.0.1:3000" }, tunnelStorage };
+void [connectorOptions, incompleteIdentity];
 const store: MicroAuthChallengeStore = { async put() {}, async get() { return null; }, async consume() { return false; } };
 createMicroAuthServer({ origin: 'https://example.com', appId: 'app_test', store }).begin(createMicroAuthBinding());
 const mini = notifyMini();

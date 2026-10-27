@@ -180,14 +180,10 @@ export async function connectInternal(options: ConnectOptions): Promise<Connecto
     }, heartbeatMs);
     timer.unref();
 
-    return {
-      connector: { ...created.body.connector, routes },
-      callbackSecret: created.body.callbackSecret,
-      reused: created.body.reused === true || created.status === 200,
-      routes,
-      close: async () => {
+    let shutdown: Promise<void> | undefined;
+    const close = () =>
+      (shutdown ??= (async () => {
         clearInterval(timer);
-        // Finish any bounded online request before reporting graceful shutdown.
         await heartbeat;
         await notifyRequest(
           apiUrl,
@@ -205,6 +201,18 @@ export async function connectInternal(options: ConnectOptions): Promise<Connecto
         } finally {
           await Promise.all(gateways.map((gateway) => gateway.close()));
         }
+      })());
+    return {
+      connector: { ...created.body.connector, routes },
+      callbackSecret: created.body.callbackSecret,
+      reused: created.body.reused === true || created.status === 200,
+      routes,
+      close,
+      removeTunnel: async () => {
+        await close();
+        if (!activeSession.remove)
+          throw new Error("This tunnel factory does not support explicit removal");
+        await activeSession.remove();
       },
     };
   } catch (error) {
