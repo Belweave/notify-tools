@@ -1,3 +1,11 @@
+# Notify Tools 0.14.1
+
+- Preserve connector tunnel identities, hostnames and certificates across unchanged restarts in a private XDG store. Add explicit `removeTunnel()` retirement; failed deletion retains credentials for retry.
+- Strip caller-supplied address and forwarding metadata for HTTP and WebSockets. Services needing visitor addresses must opt into PROXY protocol.
+- Let cross-route HTML document navigation reach Notify sign-in while retaining exact-origin and subresource restrictions.
+- Bound active sessions and pending exchanges; report capacity as retryable 503. Add framing/HSTS defaults while preserving upstream policies and handle asynchronous proxy failures safely.
+- Requires the matching server/relay admission fixes, deployed before connector clients. Existing profiles must have a single running process; historical orphan tunnels are not removed automatically.
+
 # Notify Tools 0.14.0
 
 - Let website owners enable public Notify sign-in with `apps update --public-client`, retaining one stable app ID across unrelated accounts.

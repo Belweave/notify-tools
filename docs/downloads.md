@@ -14,7 +14,7 @@ For an already reviewed GitHub release, download its archive and `SHA256SUMS`
 using authenticated maintainer access, verify the GitHub asset digest, and run:
 
 ```sh
-node scripts/prepare-downloads.mjs 0.14.0 /absolute/path/to/release-directory
+node scripts/prepare-downloads.mjs 0.14.1 /absolute/path/to/release-directory
 wrangler deploy --config wrangler.downloads.jsonc
 ```
 
