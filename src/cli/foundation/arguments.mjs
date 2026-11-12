@@ -10,12 +10,7 @@ export function parseDuration(value) {
   return Math.round(amount * multiplier);
 }
 
-export function parseArgs(argv) {
-  const positionals = [];
-  const options = { device: [], scope: [] };
-  /** Index in `positionals` where post-`--` arguments start, or null. */
-  let separatorAt = null;
-  const valueFlags = new Set([
+const valueFlags = new Set([
     "reason",
     "title",
     "image",
@@ -76,8 +71,18 @@ export function parseArgs(argv) {
     "webhook",
     "reply-webhook",
     "preset",
+    "events",
+    "output",
+    "agent",
+    "dir",
+    "escalation",
+    "format",
+    "action",
+    "actor",
+    "from",
+    "to",
   ]);
-  const booleanFlags = new Set([
+const booleanFlags = new Set([
     "clear-subtitle",
     "clear-design",
     "approval",
@@ -108,7 +113,24 @@ export function parseArgs(argv) {
     "enabled",
     "disabled",
     "no-reply-webhook",
+    "default",
+    "no-default",
+    "no-escalation",
+    "no-oncall",
+    "dry-run",
+    "version",
   ]);
+
+/** Every flag name the parser accepts, for the help and skill drift tests. */
+export function knownFlags() {
+  return { value: [...valueFlags], boolean: [...booleanFlags] };
+}
+
+export function parseArgs(argv) {
+  const positionals = [];
+  const options = { device: [], scope: [] };
+  /** Index in `positionals` where post-`--` arguments start, or null. */
+  let separatorAt = null;
   for (let index = 0; index < argv.length; index += 1) {
     const argument = argv[index];
     if (separatorAt === null && argument === "--") {
@@ -128,7 +150,9 @@ export function parseArgs(argv) {
     } else if (booleanFlags.has(rawName) && inline === undefined) {
       options[rawName] = true;
     } else {
-      throw new UsageError(`Unknown option: --${rawName}`);
+      throw new UsageError(
+        `Unknown option: --${rawName}${valueFlags.has(rawName) || booleanFlags.has(rawName) ? " (this flag takes no value)" : ""}`,
+      );
     }
   }
   return { positionals, options, separatorAt };
