@@ -3,7 +3,7 @@ name: notify
 description: Reach a person on their phone through Notify. Use when a task needs to tell someone something (a notification), get a human decision before continuing (approve/deny, yes/no or a typed reply), show a long job's progress on the lock screen, page whoever is on call, or manage Notify devices, inbox, web apps, teams, families, services and reply webhooks. Not for building a receiver, connector, microAuth sign-in or mini app (use notify-integrations), and not for messaging over email, SMS or chat.
 license: Apache-2.0
 metadata:
-  compatible-cli: "0.15.0"
+  compatible-cli: "0.15.1"
 ---
 
 # Notify
@@ -13,6 +13,10 @@ returns their answer to you. Use the **CLI** (`notify`), the **MCP** server
 (`https://notify.belweave.ai/mcp`, tools such as `notify` and `ask`; your host may
 prefix the names) or **HTTP** (`https://notify.belweave.ai/api/agent`, bearer token).
 They share one API, scopes and limits. Run `notify doctor` first if anything fails.
+
+In Hermes Agent with the `hermes-notify` plugin loaded, use its tools (`notify_send`,
+`notify_ask`, `notify_progress`, `notify_replies`, `notify_cancel`) instead of the
+CLI or MCP for the same jobs, so the two never compete; the rules below still apply.
 
 ## Pick the one right call
 

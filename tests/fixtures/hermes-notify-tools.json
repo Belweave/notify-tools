@@ -1,0 +1,4 @@
+{
+  "comment": "Tool names provided by the hermes-notify plugin for Hermes Agent. They belong to another repository (Belweave/hermes-notify): pinned from its plugin.yaml provides_tools at commit 855f5489d506c4c63b44a8ce385877bbb3fc5bb3 (PR #1, branch tune/hermes-experience). Update this list when that plugin renames or removes a tool the skills mention.",
+  "tools": ["notify_send", "notify_ask", "notify_progress", "notify_replies", "notify_cancel"]
+}
