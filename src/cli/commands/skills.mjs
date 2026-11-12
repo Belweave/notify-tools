@@ -25,7 +25,7 @@ export function agentSkillRoots(env = process.env) {
     codex: join(env.CODEX_HOME ?? join(home, ".codex"), "skills"),
     // Same configuration root as the OpenCode permission plugin. The skill
     // folder name itself is unconfirmed for every OpenCode version: see
-    // OPENCODE_NOTE, which every OpenCode result carries.
+    // opencodeNote(), which every OpenCode install result carries.
     opencode: join(home, ".config", "opencode", "skill"),
   };
 }
