@@ -115,6 +115,36 @@ export function rotationFromOptions(options, stdinRotation) {
   return Object.keys(rotation).length > 0 ? rotation : undefined;
 }
 
+/**
+ * `--escalation 10:next,30:group` becomes [{afterMinutes, target}]; at most five
+ * steps of 1–1440 minutes. `--no-escalation` clears the policy.
+ */
+export function escalationFromOptions(options) {
+  if (options.escalation && options["no-escalation"]) {
+    throw new UsageError("--escalation cannot be combined with --no-escalation");
+  }
+  if (options["no-escalation"]) return { escalation: [] };
+  if (!options.escalation) return {};
+  const steps = String(options.escalation)
+    .split(",")
+    .map((step) => step.trim())
+    .filter(Boolean)
+    .map((step) => {
+      const match = /^(\d{1,4}):(next|group)$/.exec(step);
+      const minutes = match ? Number(match[1]) : Number.NaN;
+      if (!match || minutes < 1 || minutes > 1440) {
+        throw new UsageError(
+          "--escalation takes MINUTES:next|group steps, for example 10:next,30:group (1-1440 minutes)",
+        );
+      }
+      return { afterMinutes: minutes, target: match[2] };
+    });
+  if (steps.length === 0 || steps.length > 5) {
+    throw new UsageError("--escalation takes one to five steps");
+  }
+  return { escalation: steps };
+}
+
 /** Bounded read even if the file grows between stat and read. */
 export async function readDesignFile(path, kind) {
   const file = await open(path, "r").catch((error) => { throw new UsageError(`Cannot open design file ${path}: ${error.code ?? "read failed"}`); });

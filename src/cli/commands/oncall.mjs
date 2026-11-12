@@ -2,7 +2,7 @@
 import { UsageError } from "../foundation/errors.mjs";
 import { readStdinJson } from "../foundation/input.mjs";
 import { scopedRequest } from "../foundation/transport.mjs";
-import { requireId, rotationFromOptions } from "../foundation/validation.mjs";
+import { escalationFromOptions, requireId, rotationFromOptions } from "../foundation/validation.mjs";
 
 export async function oncallCommand(config, args, options) {
   const [action, groupId, ...rest] = args;
@@ -25,6 +25,7 @@ export async function oncallCommand(config, args, options) {
       }
       const payload = {
         ...stdin,
+        ...escalationFromOptions(options),
         name,
         rotation: {
           period: "daily",
@@ -56,6 +57,7 @@ export async function oncallCommand(config, args, options) {
       }
       const payload = {
         ...stdin,
+        ...escalationFromOptions(options),
         ...(options.name ? { name: options.name } : {}),
         ...(rotation ? { rotation } : {}),
       };
@@ -64,6 +66,8 @@ export async function oncallCommand(config, args, options) {
       }
       return scopedRequest(config, groupPath(), { method: "PATCH", body: JSON.stringify(payload) });
     }
+    case "delete":
+      return scopedRequest(config, groupPath(), { method: "DELETE" });
     case "override": {
       if (!options.user || !options["starts-at"] || !options["ends-at"]) {
         throw new UsageError("oncall override requires --user, --starts-at, and --ends-at");
