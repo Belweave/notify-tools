@@ -42,6 +42,13 @@ test("release runs and typechecks outside the checkout without dependencies", as
     assert.equal(help.status, 0, help.stderr);
     assert.match(help.stdout, /notify auth login/);
     assert.match(help.stdout, /notify mini-apps/);
+    const version = node([join(release, "cli/notify.mjs"), "--version"], { cwd: folder, env });
+    assert.equal(version.stdout.trim(), releaseVersion);
+    const skillsDirectory = join(folder, "agent skills");
+    const skills = node([join(release, "cli/notify.mjs"), "skills", "install", "--dir", skillsDirectory], { cwd: folder, env });
+    assert.equal(skills.status, 0, skills.stderr);
+    assert.deepEqual(JSON.parse(skills.stdout).results.map((entry) => entry.skill), ["notify", "notify-integrations"]);
+    assert.match(await readFile(join(skillsDirectory, "notify", "references", "decisions.md"), "utf8"), /notify send ask/);
     const invalid = node([join(release, "cli/notify.mjs"), "mini-apps", "validate", join(folder, "absent.json")], { cwd: folder, env });
     assert.match(invalid.stderr, /ENOENT/);
     assert.doesNotMatch(invalid.stderr, /No token/);
