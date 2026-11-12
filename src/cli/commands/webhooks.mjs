@@ -4,6 +4,16 @@ import { readStdinJson } from "../foundation/input.mjs";
 import { scopedRequest } from "../foundation/transport.mjs";
 import { requireId } from "../foundation/validation.mjs";
 
+const WEBHOOK_EVENTS = ["interaction.answered", "interaction.expired", "interaction.canceled"];
+
+function parseWebhookEvents(value) {
+  const events = [...new Set(String(value).split(",").map((event) => event.trim()).filter(Boolean))];
+  if (events.length === 0 || events.some((event) => !WEBHOOK_EVENTS.includes(event))) {
+    throw new UsageError(`--events takes a comma-separated list of: ${WEBHOOK_EVENTS.join(", ")}`);
+  }
+  return events;
+}
+
 export async function handleWebhooks(context) {
   const { action, id, options, config } = context;
   {
@@ -27,7 +37,10 @@ export async function handleWebhooks(context) {
       if (options.enabled && options.disabled) {
         throw new UsageError("--enabled cannot be combined with --disabled");
       }
-      const stdin = options.stdin ? await readStdinJson() : {};
+      if (options.default && options["no-default"]) {
+        throw new UsageError("--default cannot be combined with --no-default");
+      }
+      const stdin = options.stdin ? await readStdinJson(context.runtime?.stdin) : {};
       const payload = {
         ...stdin,
         ...(options.name ? { name: options.name } : {}),
@@ -35,13 +48,16 @@ export async function handleWebhooks(context) {
         ...(options.preset ? { preset: options.preset } : {}),
         ...(options.enabled ? { enabled: true } : {}),
         ...(options.disabled ? { enabled: false } : {}),
+        ...(options.default ? { isDefault: true } : {}),
+        ...(options["no-default"] ? { isDefault: false } : {}),
+        ...(options.events ? { events: parseWebhookEvents(options.events) } : {}),
       };
       if (action === "create" && (!payload.name || !payload.url)) {
         throw new UsageError("webhooks create requires --name and --url, or --stdin");
       }
       if (action === "update" && Object.keys(payload).length === 0) {
         throw new UsageError(
-          "webhooks update requires --name, --url, --preset, --enabled, --disabled, or --stdin",
+          "webhooks update requires --name, --url, --preset, --events, --enabled, --disabled, --default, --no-default, or --stdin",
         );
       }
       const path =
@@ -58,5 +74,5 @@ export async function handleWebhooks(context) {
     }
   }
 
-  throw new UsageError("Unknown command. Run notify --help.");
+  throw new UsageError("Unknown command. Run notify webhooks --help.");
 }

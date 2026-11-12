@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 import { parseDuration } from "../foundation/arguments.mjs";
 import { UsageError } from "../foundation/errors.mjs";
-import { readStdinJson } from "../foundation/input.mjs";
+import { readStdinJson, textArgument } from "../foundation/input.mjs";
 import {
   POLL_TIMEOUT_SECONDS,
   dispatchExitCode,
@@ -9,7 +9,7 @@ import {
   pageExitCode,
   waitForInteraction,
 } from "../foundation/results.mjs";
-import { request, scopedRequest } from "../foundation/transport.mjs";
+import { idempotencyHeaders, request, scopedRequest } from "../foundation/transport.mjs";
 import {
   assertNotificationBody,
   designFromOptions,
@@ -67,8 +67,11 @@ export async function handleSend(context) {
           "--project, --summary, --markdown, --body-format, and --app apply to send, not send ask",
         );
       }
-      const stdin = options.stdin ? await readStdinJson() : {};
-      const prompt = positionals.slice(2).join(" ") || stdin.prompt;
+      if (options.stdin && positionals[2] === "-") {
+        throw new UsageError("Use either --stdin (JSON) or - (plain-text prompt), not both");
+      }
+      const stdin = options.stdin ? await readStdinJson(runtime.stdin) : {};
+      const prompt = (await textArgument(positionals.slice(2), runtime)) || stdin.prompt;
       if (!prompt) throw new UsageError("send ask requires a prompt");
       const expiresInSeconds = parseDuration(options["expires-in"] ?? stdin.expiresIn ?? "15m");
       const liveActivity = options["live-activity"] || stdin.presentation === "live_activity";
@@ -120,9 +123,7 @@ export async function handleSend(context) {
       }
       const body = await request(config, "/api/agent/interactions", {
         method: "POST",
-        headers: options["idempotency-key"]
-          ? { "Idempotency-Key": options["idempotency-key"] }
-          : undefined,
+        headers: idempotencyHeaders(options),
         body: JSON.stringify(payload),
       });
       if (dispatchExitCode(body) === 7) return { body, exitCode: 7 };
@@ -140,9 +141,12 @@ export async function handleSend(context) {
         exitCode: waited.timedOut ? 4 : interactionExitCode(waited.interaction),
       };
     }
-    const stdin = options.stdin ? await readStdinJson() : {};
+    if (options.stdin && positionals[1] === "-") {
+      throw new UsageError("Use either --stdin (JSON) or - (plain-text body), not both");
+    }
+    const stdin = options.stdin ? await readStdinJson(runtime.stdin) : {};
     if (options["design-file"] || options["clear-design"] || Object.hasOwn(stdin, "design")) throw new UsageError("design applies to send ask --live-activity, not send");
-    const notificationBody = positionals.slice(1).join(" ") || stdin.body;
+    const notificationBody = (await textArgument(positionals.slice(1), runtime)) || stdin.body;
     if (!notificationBody) throw new UsageError("send requires a message body");
     assertNotificationBody(notificationBody);
     const bodyFormat = resolveBodyFormat(options);
@@ -168,9 +172,7 @@ export async function handleSend(context) {
     }
     const body = await request(config, "/api/agent/notifications", {
       method: "POST",
-      headers: options["idempotency-key"]
-        ? { "Idempotency-Key": options["idempotency-key"] }
-        : undefined,
+      headers: idempotencyHeaders(options),
       body: JSON.stringify(payload),
     });
     if (options.oncall) return { body, exitCode: pageExitCode(body) };

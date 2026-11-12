@@ -1,3 +1,41 @@
+# Notify Tools 0.15.0
+
+Added
+- `notify doctor` checks Node, credentials, API reachability, scopes, token expiry, registered phones and installed skills without printing secrets. `--json` gives a stable report.
+- `notify interaction cancel ID` cancels a pending prompt. `interactions` and `activities` are accepted as spellings of `interaction` and `activity`.
+- `notify connectors list|get|update|remove`: rename, enable or disable a connector and set the on-call group paged when it goes offline.
+- `notify events list` for recent service webhook deliveries (needs `events:read`).
+- `notify teams apps|devices|audit TEAM_ID`; `audit --format csv` prints CSV.
+- `notify oncall delete ID`, and `--escalation 10:next,30:group` / `--no-escalation` on `oncall create|update`.
+- `notify webhooks create|update --default|--no-default --events ...` for account-default reply webhooks and their event subscriptions.
+- `notify mini-apps archive ID --output FILE` writes the exact published bytes after checking them against the package ID.
+- `notify skills install|status|uninstall [--agent claude|codex|opencode|all] [--dir DIR] [--dry-run]` installs the agent skills that ship with this release; it only replaces or removes directories it installed. OpenCode installs go to `~/.config/opencode/skill` and say where they went and how to move them, because that folder is not confirmed for every OpenCode version.
+- `notify version` / `--version`, `notify completion bash|zsh`, and `notify help exit-codes`.
+- `notify send -` and `notify send ask -` read the body or prompt from stdin.
+- SDK: `verifyReplyWebhookSignature` and `signReplyWebhook` check `X-Notify-Signature: t=…,v1=…` reply-webhook deliveries against the raw body.
+
+Changed
+- `--help` now works per command (`notify send ask --help`) and shows a working example. `notify --help` is organised by job; every previous command and flag still works.
+- Writes that create something (send, send ask, activity start/update/end) always send an `Idempotency-Key` (yours, or a generated one) and retry a network or gateway failure up to twice with the same key, so a retry cannot duplicate a notification, prompt or activity.
+- Errors print a `hint:` line with the next step. With `--json`, a failure is one JSON object on stderr (`{ok, exitCode, error: {type, message, status, code, required, issues, hint}}`). Token-, key- and webhook-URL-shaped strings are redacted from error output.
+- Ctrl-C during `--wait` or `interaction wait` stops waiting, prints the last known state, says how to resume, and exits 130. The prompt stays pending.
+- `auth login` backs off when the device endpoint rate-limits instead of failing, and explains the API token limit.
+- `teams create` explains that new workplace teams are unavailable and points to `families create` (the server only creates families).
+- Requests identify themselves as `notify-tools/VERSION`.
+
+Agent skills
+- Rebuilt as two skills. `notify` is a short router with four rules (ask instead of notify when you need an answer, bound every wait and handle no answer, make prompts stand alone, keep secrets off the phone) and references for decisions, messages, progress, Live Activity design, on call, web apps, teams and integrations, authentication, errors and limits, and troubleshooting. `notify-integrations` covers receivers, connectors, microAuth, mini apps and permission hooks.
+- Every reference has CLI, MCP and HTTP examples. A test checks every command, flag, MCP tool and argument, HTTP route and body field against this CLI and the production API, parses every code example, and runs every CLI example against a stub.
+- The previous nested `notify-*` guides are replaced; their content moved into the references.
+
+Documentation
+- The README is now a quick start. Connector, microAuth/mini-app and Live Activity/MCP reference material moved unchanged into `docs/`.
+
+Development
+- Update the development tools vitest to 4.1.12 and esbuild to 0.28.1 for their published security fixes (test mock redirects, development server). Release bundles are unchanged in content.
+
+Compatibility: no command, flag or JSON success output was removed. Scripts that matched the old single-line error text on stderr now also see a `hint:` line.
+
 # Notify Tools 0.14.2
 
 - Require patched Node.js 22.23.4+, 24.22.1+ or 26.12.1+ within those supported major lines, incorporating the October 21, 2026 security updates including the Brotli decoder RCE fix.

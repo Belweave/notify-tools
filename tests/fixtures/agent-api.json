@@ -1,0 +1,1730 @@
+{
+ "mcpTools": {
+  "activities_end": {
+   "extraArgs": [
+    "idempotencyKey"
+   ],
+   "operation": "POST /api/agent/activities/{identifier}/end",
+   "pathArgs": {
+    "identifier": "activity"
+   },
+   "queryArgs": []
+  },
+  "activities_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/activities/{identifier}",
+   "pathArgs": {
+    "identifier": "activity"
+   },
+   "queryArgs": []
+  },
+  "activities_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/activities",
+   "pathArgs": {},
+   "queryArgs": [
+    "limit"
+   ]
+  },
+  "activities_start": {
+   "extraArgs": [
+    "idempotencyKey"
+   ],
+   "operation": "POST /api/agent/activities",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "activities_update": {
+   "extraArgs": [
+    "idempotencyKey"
+   ],
+   "operation": "PATCH /api/agent/activities/{identifier}",
+   "pathArgs": {
+    "identifier": "activity"
+   },
+   "queryArgs": []
+  },
+  "activity_feed": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/activity-feed",
+   "pathArgs": {},
+   "queryArgs": [
+    "filter",
+    "page"
+   ]
+  },
+  "apps_create": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/apps",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "apps_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/apps/{id}",
+   "pathArgs": {
+    "id": "appId"
+   },
+   "queryArgs": []
+  },
+  "apps_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/apps",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "apps_remove": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/apps/{id}",
+   "pathArgs": {
+    "id": "appId"
+   },
+   "queryArgs": []
+  },
+  "apps_revoke": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/apps/{id}/revoke",
+   "pathArgs": {
+    "id": "appId"
+   },
+   "queryArgs": []
+  },
+  "apps_share": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/apps/{id}/share",
+   "pathArgs": {
+    "id": "appId"
+   },
+   "queryArgs": []
+  },
+  "apps_update": {
+   "extraArgs": [],
+   "operation": "PATCH /api/agent/apps/{id}",
+   "pathArgs": {
+    "id": "appId"
+   },
+   "queryArgs": []
+  },
+  "ask": {
+   "extraArgs": [
+    "idempotencyKey",
+    "timeoutSeconds"
+   ],
+   "operation": "POST /api/agent/interactions",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "auth_revoke": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/auth/revoke",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "auth_status": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/auth/status",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "billing_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/billing",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "connectors_create": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/connectors",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "connectors_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/connectors/{id}",
+   "pathArgs": {
+    "id": "connectorId"
+   },
+   "queryArgs": []
+  },
+  "connectors_heartbeat": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/connectors/{id}/heartbeat",
+   "pathArgs": {
+    "id": "connectorId"
+   },
+   "queryArgs": []
+  },
+  "connectors_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/connectors",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "connectors_remove": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/connectors/{id}",
+   "pathArgs": {
+    "id": "connectorId"
+   },
+   "queryArgs": []
+  },
+  "connectors_rotate_secret": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/connectors/{id}/rotate-secret",
+   "pathArgs": {
+    "id": "connectorId"
+   },
+   "queryArgs": []
+  },
+  "connectors_update": {
+   "extraArgs": [],
+   "operation": "PATCH /api/agent/connectors/{id}",
+   "pathArgs": {
+    "id": "connectorId"
+   },
+   "queryArgs": []
+  },
+  "devices_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/devices",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "devices_remove": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/devices/{id}",
+   "pathArgs": {
+    "id": "deviceId"
+   },
+   "queryArgs": []
+  },
+  "events_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/events",
+   "pathArgs": {},
+   "queryArgs": [
+    "limit"
+   ]
+  },
+  "groups_create": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/teams/{id}/groups",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "groups_delete": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/teams/{id}/groups/{groupId}",
+   "pathArgs": {
+    "groupId": "groupId",
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "groups_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams/{id}/groups/{groupId}",
+   "pathArgs": {
+    "groupId": "groupId",
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "groups_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams/{id}/groups",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "groups_update": {
+   "extraArgs": [],
+   "operation": "PATCH /api/agent/teams/{id}/groups/{groupId}",
+   "pathArgs": {
+    "groupId": "groupId",
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "inbox_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/inbox/notifications/{id}",
+   "pathArgs": {
+    "id": "id"
+   },
+   "queryArgs": []
+  },
+  "inbox_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/inbox/notifications",
+   "pathArgs": {},
+   "queryArgs": [
+    "limit",
+    "unread",
+    "cursor"
+   ]
+  },
+  "inbox_projects": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/inbox/projects",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "inbox_read": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/inbox/notifications/{id}/read",
+   "pathArgs": {
+    "id": "id"
+   },
+   "queryArgs": []
+  },
+  "inbox_read_all": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/inbox/notifications/read-all",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "inbox_unread": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/inbox/notifications/{id}/unread",
+   "pathArgs": {
+    "id": "id"
+   },
+   "queryArgs": []
+  },
+  "interactions_cancel": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/interactions/{id}/cancel",
+   "pathArgs": {
+    "id": "id"
+   },
+   "queryArgs": []
+  },
+  "interactions_create": {
+   "extraArgs": [
+    "idempotencyKey"
+   ],
+   "operation": "POST /api/agent/interactions",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "interactions_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/interactions/{id}",
+   "pathArgs": {
+    "id": "id"
+   },
+   "queryArgs": []
+  },
+  "interactions_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/interactions",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "interactions_wait": {
+   "extraArgs": [
+    "timeoutSeconds"
+   ],
+   "operation": "GET /api/agent/interactions/{id}/wait",
+   "pathArgs": {
+    "id": "id"
+   },
+   "queryArgs": []
+  },
+  "mini_apps_block": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/mini-apps/{packageId}/block",
+   "pathArgs": {
+    "packageId": "packageId"
+   },
+   "queryArgs": []
+  },
+  "mini_apps_disable": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/mini-apps/{packageId}/disable",
+   "pathArgs": {
+    "packageId": "packageId"
+   },
+   "queryArgs": []
+  },
+  "mini_apps_export": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/mini-apps/export",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "mini_apps_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/mini-apps/{packageId}",
+   "pathArgs": {
+    "packageId": "packageId"
+   },
+   "queryArgs": []
+  },
+  "mini_apps_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/mini-apps",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "mini_apps_offer": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/mini-apps/{packageId}/offer",
+   "pathArgs": {
+    "packageId": "packageId"
+   },
+   "queryArgs": []
+  },
+  "mini_apps_remove": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/mini-apps/{packageId}",
+   "pathArgs": {
+    "packageId": "packageId"
+   },
+   "queryArgs": []
+  },
+  "mini_apps_report": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/mini-apps/{packageId}/report",
+   "pathArgs": {
+    "packageId": "packageId"
+   },
+   "queryArgs": []
+  },
+  "mini_apps_review": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/mini-apps/review",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "notification_withdraw": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/notifications/{id}/withdraw",
+   "pathArgs": {
+    "id": "id"
+   },
+   "queryArgs": []
+  },
+  "notify": {
+   "extraArgs": [
+    "idempotencyKey"
+   ],
+   "operation": "POST /api/agent/notifications",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "oncall_create": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/teams/{id}/oncall",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "oncall_delete": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/oncall/{groupId}",
+   "pathArgs": {
+    "groupId": "groupId"
+   },
+   "queryArgs": []
+  },
+  "oncall_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/oncall/{groupId}",
+   "pathArgs": {
+    "groupId": "groupId"
+   },
+   "queryArgs": []
+  },
+  "oncall_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams/{id}/oncall",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "oncall_me": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/oncall/me",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "oncall_override_add": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/oncall/{groupId}/overrides",
+   "pathArgs": {
+    "groupId": "groupId"
+   },
+   "queryArgs": []
+  },
+  "oncall_override_remove": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/oncall/{groupId}/overrides/{overrideId}",
+   "pathArgs": {
+    "groupId": "groupId",
+    "overrideId": "overrideId"
+   },
+   "queryArgs": []
+  },
+  "oncall_update": {
+   "extraArgs": [],
+   "operation": "PATCH /api/agent/oncall/{groupId}",
+   "pathArgs": {
+    "groupId": "groupId"
+   },
+   "queryArgs": []
+  },
+  "pages_create": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/oncall/{groupId}/pages",
+   "pathArgs": {
+    "groupId": "groupId"
+   },
+   "queryArgs": []
+  },
+  "pages_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/pages/{id}",
+   "pathArgs": {
+    "id": "pageId"
+   },
+   "queryArgs": []
+  },
+  "pages_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams/{id}/pages",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": [
+    "status",
+    "cursor",
+    "limit"
+   ]
+  },
+  "pages_resolve": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/pages/{id}/resolve",
+   "pathArgs": {
+    "id": "pageId"
+   },
+   "queryArgs": []
+  },
+  "services_create": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/services",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "services_delete": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/services/{id}",
+   "pathArgs": {
+    "id": "serviceId"
+   },
+   "queryArgs": []
+  },
+  "services_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/services/{id}",
+   "pathArgs": {
+    "id": "serviceId"
+   },
+   "queryArgs": []
+  },
+  "services_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/services",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "services_rotate": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/services/{id}/rotate",
+   "pathArgs": {
+    "id": "serviceId"
+   },
+   "queryArgs": []
+  },
+  "services_share": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/services/{id}/share",
+   "pathArgs": {
+    "id": "serviceId"
+   },
+   "queryArgs": []
+  },
+  "services_update": {
+   "extraArgs": [],
+   "operation": "PATCH /api/agent/services/{id}",
+   "pathArgs": {
+    "id": "serviceId"
+   },
+   "queryArgs": []
+  },
+  "teams_apps": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams/{id}/apps",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_audit": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams/{id}/audit",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": [
+    "action",
+    "actor",
+    "from",
+    "to",
+    "cursor",
+    "limit",
+    "format"
+   ]
+  },
+  "teams_clear_domain": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/teams/{id}/domain",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_create": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/teams",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "teams_delete": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/teams/{id}",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_devices": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams/{id}/devices",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams/{id}",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_invite": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/teams/{id}/invites",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_invites": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams/{id}/invites",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_leave": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/teams/{id}/leave",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/teams",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "teams_remove_member": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/teams/{id}/members/{userId}",
+   "pathArgs": {
+    "id": "teamId",
+    "userId": "memberId"
+   },
+   "queryArgs": []
+  },
+  "teams_rename": {
+   "extraArgs": [],
+   "operation": "PATCH /api/agent/teams/{id}",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_request_domain": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/teams/{id}/domain",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "teams_revoke_invite": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/teams/{id}/invites/{inviteId}",
+   "pathArgs": {
+    "id": "teamId",
+    "inviteId": "inviteId"
+   },
+   "queryArgs": []
+  },
+  "teams_set_role": {
+   "extraArgs": [],
+   "operation": "PATCH /api/agent/teams/{id}/members/{userId}",
+   "pathArgs": {
+    "id": "teamId",
+    "userId": "memberId"
+   },
+   "queryArgs": []
+  },
+  "teams_verify_domain": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/teams/{id}/domain/verify",
+   "pathArgs": {
+    "id": "teamId"
+   },
+   "queryArgs": []
+  },
+  "tokens_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/tokens",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "tokens_revoke": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/tokens/{id}",
+   "pathArgs": {
+    "id": "tokenId"
+   },
+   "queryArgs": []
+  },
+  "webhooks_create": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/webhooks",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "webhooks_delete": {
+   "extraArgs": [],
+   "operation": "DELETE /api/agent/webhooks/{id}",
+   "pathArgs": {
+    "id": "webhookId"
+   },
+   "queryArgs": []
+  },
+  "webhooks_get": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/webhooks/{id}",
+   "pathArgs": {
+    "id": "webhookId"
+   },
+   "queryArgs": []
+  },
+  "webhooks_list": {
+   "extraArgs": [],
+   "operation": "GET /api/agent/webhooks",
+   "pathArgs": {},
+   "queryArgs": []
+  },
+  "webhooks_rotate_secret": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/webhooks/{id}/rotate-secret",
+   "pathArgs": {
+    "id": "webhookId"
+   },
+   "queryArgs": []
+  },
+  "webhooks_test": {
+   "extraArgs": [],
+   "operation": "POST /api/agent/webhooks/{id}/test",
+   "pathArgs": {
+    "id": "webhookId"
+   },
+   "queryArgs": []
+  },
+  "webhooks_update": {
+   "extraArgs": [],
+   "operation": "PATCH /api/agent/webhooks/{id}",
+   "pathArgs": {
+    "id": "webhookId"
+   },
+   "queryArgs": []
+  }
+ },
+ "operations": {
+  "DELETE /api/agent/apps/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "DELETE /api/agent/connectors/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "connectors:write"
+   ]
+  },
+  "DELETE /api/agent/devices/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "devices:write"
+   ]
+  },
+  "DELETE /api/agent/mini-apps/{packageId}": {
+   "body": [
+    "reason"
+   ],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "DELETE /api/agent/oncall/{groupId}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "oncall:write"
+   ]
+  },
+  "DELETE /api/agent/oncall/{groupId}/overrides/{overrideId}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "oncall:write"
+   ]
+  },
+  "DELETE /api/agent/services/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  },
+  "DELETE /api/agent/teams/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "DELETE /api/agent/teams/{id}/domain": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "DELETE /api/agent/teams/{id}/groups/{groupId}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "DELETE /api/agent/teams/{id}/invites/{inviteId}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "DELETE /api/agent/teams/{id}/members/{userId}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "DELETE /api/agent/tokens/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "tokens:manage"
+   ]
+  },
+  "DELETE /api/agent/webhooks/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  },
+  "GET /api/agent/activities": {
+   "body": [],
+   "query": [
+    "limit"
+   ],
+   "scopes": [
+    "activities:read"
+   ]
+  },
+  "GET /api/agent/activities/{identifier}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "activities:read"
+   ]
+  },
+  "GET /api/agent/activity-feed": {
+   "body": [],
+   "query": [
+    "filter",
+    "page"
+   ],
+   "scopes": [
+    "events:read"
+   ]
+  },
+  "GET /api/agent/apps": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:read"
+   ]
+  },
+  "GET /api/agent/apps/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:read"
+   ]
+  },
+  "GET /api/agent/auth/status": {
+   "body": [],
+   "query": [],
+   "scopes": []
+  },
+  "GET /api/agent/billing": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "billing:read"
+   ]
+  },
+  "GET /api/agent/connectors": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "connectors:read"
+   ]
+  },
+  "GET /api/agent/connectors/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "connectors:read"
+   ]
+  },
+  "GET /api/agent/devices": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "devices:read"
+   ]
+  },
+  "GET /api/agent/events": {
+   "body": [],
+   "query": [
+    "limit"
+   ],
+   "scopes": [
+    "events:read"
+   ]
+  },
+  "GET /api/agent/inbox/notifications": {
+   "body": [],
+   "query": [
+    "cursor",
+    "limit",
+    "project",
+    "unread"
+   ],
+   "scopes": [
+    "inbox:read"
+   ]
+  },
+  "GET /api/agent/inbox/notifications/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "inbox:read"
+   ]
+  },
+  "GET /api/agent/inbox/projects": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "inbox:read"
+   ]
+  },
+  "GET /api/agent/interactions": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "interactions:read"
+   ]
+  },
+  "GET /api/agent/interactions/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "interactions:read"
+   ]
+  },
+  "GET /api/agent/interactions/{id}/wait": {
+   "body": [],
+   "query": [
+    "timeout"
+   ],
+   "scopes": [
+    "interactions:read"
+   ]
+  },
+  "GET /api/agent/mini-apps": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:read"
+   ]
+  },
+  "GET /api/agent/mini-apps/export": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:read"
+   ]
+  },
+  "GET /api/agent/mini-apps/keys": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:read"
+   ]
+  },
+  "GET /api/agent/mini-apps/review": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:read"
+   ]
+  },
+  "GET /api/agent/mini-apps/{packageId}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:read"
+   ]
+  },
+  "GET /api/agent/mini-apps/{packageId}/archive": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:read"
+   ]
+  },
+  "GET /api/agent/oncall/me": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "oncall:read"
+   ]
+  },
+  "GET /api/agent/oncall/{groupId}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "oncall:read"
+   ]
+  },
+  "GET /api/agent/pages/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "oncall:read"
+   ]
+  },
+  "GET /api/agent/services": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "services:read"
+   ]
+  },
+  "GET /api/agent/services/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "services:read"
+   ]
+  },
+  "GET /api/agent/teams": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:read"
+   ]
+  },
+  "GET /api/agent/teams/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:read"
+   ]
+  },
+  "GET /api/agent/teams/{id}/apps": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:read",
+    "teams:read"
+   ]
+  },
+  "GET /api/agent/teams/{id}/audit": {
+   "body": [],
+   "query": [
+    "action",
+    "actor",
+    "cursor",
+    "format",
+    "from",
+    "limit",
+    "to"
+   ],
+   "scopes": [
+    "teams:read"
+   ]
+  },
+  "GET /api/agent/teams/{id}/devices": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:read"
+   ]
+  },
+  "GET /api/agent/teams/{id}/groups": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:read"
+   ]
+  },
+  "GET /api/agent/teams/{id}/groups/{groupId}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:read"
+   ]
+  },
+  "GET /api/agent/teams/{id}/invites": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:read"
+   ]
+  },
+  "GET /api/agent/teams/{id}/oncall": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "oncall:read"
+   ]
+  },
+  "GET /api/agent/teams/{id}/pages": {
+   "body": [],
+   "query": [
+    "cursor",
+    "limit",
+    "status"
+   ],
+   "scopes": [
+    "oncall:read"
+   ]
+  },
+  "GET /api/agent/tokens": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "tokens:manage"
+   ]
+  },
+  "GET /api/agent/webhooks": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "services:read"
+   ]
+  },
+  "GET /api/agent/webhooks/{id}": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "services:read"
+   ]
+  },
+  "PATCH /api/agent/activities/{identifier}": {
+   "body": [
+    "accentColor",
+    "design",
+    "detail",
+    "ifSequence",
+    "priority",
+    "privacyMode",
+    "progress",
+    "staleAfterSeconds",
+    "status",
+    "style",
+    "subtitle",
+    "symbol",
+    "title"
+   ],
+   "query": [],
+   "scopes": [
+    "activities:write"
+   ]
+  },
+  "PATCH /api/agent/apps/{id}": {
+   "body": [
+    "iconUrl",
+    "name",
+    "project",
+    "publicClient",
+    "url"
+   ],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "PATCH /api/agent/connectors/{id}": {
+   "body": [
+    "enabled",
+    "hostname",
+    "name",
+    "oncallGroupId",
+    "routes",
+    "status",
+    "tunnelId"
+   ],
+   "query": [],
+   "scopes": [
+    "connectors:write"
+   ]
+  },
+  "PATCH /api/agent/oncall/{groupId}": {
+   "body": [
+    "escalation",
+    "name",
+    "rotation"
+   ],
+   "query": [],
+   "scopes": [
+    "oncall:write"
+   ]
+  },
+  "PATCH /api/agent/services/{id}": {
+   "body": [
+    "defaultReplyWebhookId",
+    "imageUrl",
+    "title",
+    "url"
+   ],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  },
+  "PATCH /api/agent/teams/{id}": {
+   "body": [
+    "autoJoinVerifiedDomain",
+    "name",
+    "retentionDays"
+   ],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "PATCH /api/agent/teams/{id}/groups/{groupId}": {
+   "body": [
+    "deviceIds",
+    "memberIds",
+    "name"
+   ],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "PATCH /api/agent/teams/{id}/members/{userId}": {
+   "body": [
+    "role"
+   ],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "PATCH /api/agent/webhooks/{id}": {
+   "body": [
+    "enabled",
+    "events",
+    "headers",
+    "isDefault",
+    "name",
+    "preset",
+    "url"
+   ],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  },
+  "POST /api/agent/activities": {
+   "body": [
+    "accentColor",
+    "design",
+    "detail",
+    "deviceIds",
+    "expiresInSeconds",
+    "group",
+    "key",
+    "privacyMode",
+    "progress",
+    "replace",
+    "staleAfterSeconds",
+    "status",
+    "style",
+    "subtitle",
+    "symbol",
+    "title"
+   ],
+   "query": [],
+   "scopes": [
+    "activities:write"
+   ]
+  },
+  "POST /api/agent/activities/{identifier}/end": {
+   "body": [
+    "accentColor",
+    "detail",
+    "dismissAfterSeconds",
+    "ifSequence",
+    "progress",
+    "status",
+    "subtitle",
+    "symbol"
+   ],
+   "query": [],
+   "scopes": [
+    "activities:write"
+   ]
+  },
+  "POST /api/agent/apps": {
+   "body": [
+    "iconUrl",
+    "name",
+    "project",
+    "teamId",
+    "url"
+   ],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "POST /api/agent/apps/{id}/revoke": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "POST /api/agent/apps/{id}/share": {
+   "body": [
+    "notify",
+    "teamId"
+   ],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "POST /api/agent/auth/revoke": {
+   "body": [],
+   "query": [],
+   "scopes": []
+  },
+  "POST /api/agent/connectors": {
+   "body": [
+    "hostname",
+    "name",
+    "oncallGroupId",
+    "routes",
+    "teamId",
+    "tunnelId"
+   ],
+   "query": [],
+   "scopes": [
+    "connectors:write"
+   ]
+  },
+  "POST /api/agent/connectors/{id}/access": {
+   "body": [
+    "consume",
+    "pass",
+    "routeName"
+   ],
+   "query": [],
+   "scopes": [
+    "connectors:write"
+   ]
+  },
+  "POST /api/agent/connectors/{id}/callback-access": {
+   "body": [
+    "body",
+    "routeName",
+    "signature",
+    "timestamp"
+   ],
+   "query": [],
+   "scopes": [
+    "connectors:write"
+   ]
+  },
+  "POST /api/agent/connectors/{id}/heartbeat": {
+   "body": [
+    "graceful",
+    "hostname",
+    "routes",
+    "status",
+    "tunnelId"
+   ],
+   "query": [],
+   "scopes": [
+    "connectors:write"
+   ]
+  },
+  "POST /api/agent/connectors/{id}/rotate-secret": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "connectors:write"
+   ]
+  },
+  "POST /api/agent/inbox/notifications/read-all": {
+   "body": [
+    "project",
+    "readThrough"
+   ],
+   "query": [],
+   "scopes": [
+    "inbox:write"
+   ]
+  },
+  "POST /api/agent/inbox/notifications/{id}/read": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "inbox:write"
+   ]
+  },
+  "POST /api/agent/inbox/notifications/{id}/unread": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "inbox:write"
+   ]
+  },
+  "POST /api/agent/interactions": {
+   "body": [
+    "accentColor",
+    "callback",
+    "design",
+    "deviceIds",
+    "expiresInSeconds",
+    "group",
+    "imageUrl",
+    "kind",
+    "presentation",
+    "primaryLabel",
+    "prompt",
+    "secondaryLabel",
+    "style",
+    "title",
+    "url",
+    "webhookId"
+   ],
+   "query": [],
+   "scopes": [
+    "interactions:create",
+    "notifications:send"
+   ]
+  },
+  "POST /api/agent/interactions/{id}/cancel": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "interactions:create"
+   ]
+  },
+  "POST /api/agent/mini-apps/publish": {
+   "body": [
+    "files",
+    "manifest"
+   ],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "POST /api/agent/mini-apps/{packageId}/block": {
+   "body": [
+    "reason"
+   ],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "POST /api/agent/mini-apps/{packageId}/disable": {
+   "body": [
+    "reason"
+   ],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "POST /api/agent/mini-apps/{packageId}/offer": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "apps:write",
+    "notifications:send"
+   ]
+  },
+  "POST /api/agent/mini-apps/{packageId}/report": {
+   "body": [
+    "reason"
+   ],
+   "query": [],
+   "scopes": [
+    "apps:write"
+   ]
+  },
+  "POST /api/agent/notifications": {
+   "body": [
+    "appId",
+    "body",
+    "bodyFormat",
+    "deviceIds",
+    "group",
+    "imageUrl",
+    "oncall",
+    "project",
+    "summary",
+    "title",
+    "url"
+   ],
+   "query": [],
+   "scopes": [
+    "notifications:send"
+   ]
+  },
+  "POST /api/agent/notifications/{id}/withdraw": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "notifications:send"
+   ]
+  },
+  "POST /api/agent/oncall/{groupId}/overrides": {
+   "body": [
+    "endsAt",
+    "startsAt",
+    "userId"
+   ],
+   "query": [],
+   "scopes": [
+    "oncall:write"
+   ]
+  },
+  "POST /api/agent/oncall/{groupId}/pages": {
+   "body": [
+    "appId",
+    "body",
+    "dedupKey",
+    "group",
+    "title",
+    "url"
+   ],
+   "query": [],
+   "scopes": [
+    "oncall:write"
+   ]
+  },
+  "POST /api/agent/pages/{id}/resolve": {
+   "body": [
+    "note"
+   ],
+   "query": [],
+   "scopes": [
+    "oncall:write"
+   ]
+  },
+  "POST /api/agent/services": {
+   "body": [
+    "defaultReplyWebhookId",
+    "imageUrl",
+    "title",
+    "url"
+   ],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  },
+  "POST /api/agent/services/{id}/rotate": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  },
+  "POST /api/agent/services/{id}/share": {
+   "body": [
+    "familyId"
+   ],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  },
+  "POST /api/agent/teams": {
+   "body": [
+    "kind",
+    "name"
+   ],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "POST /api/agent/teams/{id}/domain": {
+   "body": [
+    "domain"
+   ],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "POST /api/agent/teams/{id}/domain/verify": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "POST /api/agent/teams/{id}/groups": {
+   "body": [
+    "deviceIds",
+    "memberIds",
+    "name"
+   ],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "POST /api/agent/teams/{id}/invites": {
+   "body": [
+    "domain",
+    "email",
+    "role"
+   ],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "POST /api/agent/teams/{id}/leave": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "teams:write"
+   ]
+  },
+  "POST /api/agent/teams/{id}/oncall": {
+   "body": [
+    "escalation",
+    "name",
+    "rotation"
+   ],
+   "query": [],
+   "scopes": [
+    "oncall:write"
+   ]
+  },
+  "POST /api/agent/webhooks": {
+   "body": [
+    "enabled",
+    "events",
+    "headers",
+    "isDefault",
+    "name",
+    "preset",
+    "url"
+   ],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  },
+  "POST /api/agent/webhooks/{id}/rotate-secret": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  },
+  "POST /api/agent/webhooks/{id}/test": {
+   "body": [],
+   "query": [],
+   "scopes": [
+    "services:write"
+   ]
+  }
+ },
+ "source": "https://notify.belweave.ai/openapi.json and the production MCP tool list, 2026-11-12"
+}

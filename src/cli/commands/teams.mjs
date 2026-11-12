@@ -1,7 +1,34 @@
 // SPDX-License-Identifier: Apache-2.0
-import { UsageError } from "../foundation/errors.mjs";
-import { scopedRequest } from "../foundation/transport.mjs";
+import { RequestError, UsageError } from "../foundation/errors.mjs";
+import { requestBytes, scopedRequest } from "../foundation/transport.mjs";
+import { RAW_OUTPUT } from "../foundation/results.mjs";
 import { requireId } from "../foundation/validation.mjs";
+
+const AUDIT_FORMATS = ["json", "csv"];
+
+async function auditCommand(config, teamPath, options) {
+  const query = new URLSearchParams();
+  for (const key of ["action", "actor", "from", "to", "cursor"]) {
+    if (options[key]) query.set(key, options[key]);
+  }
+  if (options.limit) {
+    const limit = Number.parseInt(options.limit, 10);
+    if (!/^\d+$/.test(options.limit) || limit < 1 || limit > 1000) {
+      throw new UsageError("--limit must be an integer from 1 to 1000");
+    }
+    query.set("limit", String(limit));
+  }
+  if (options.format && !AUDIT_FORMATS.includes(options.format)) {
+    throw new UsageError("--format must be json or csv");
+  }
+  if (options.format === "csv") {
+    query.set("format", "csv");
+    const bytes = await requestBytes(config, `${teamPath}/audit?${query}`);
+    return { [RAW_OUTPUT]: bytes.toString("utf8") };
+  }
+  const suffix = query.size > 0 ? `?${query}` : "";
+  return scopedRequest(config, `${teamPath}/audit${suffix}`);
+}
 
 export const TEAM_ROLES = ["owner", "admin", "member"];
 
@@ -15,10 +42,26 @@ export async function teamsCommand(config, args, options) {
     case "create": {
       const name = [teamId, ...rest].filter(Boolean).join(" ") || options.name;
       if (!name) throw new UsageError("teams create requires a name");
-      return scopedRequest(config, base, {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      });
+      try {
+        return await scopedRequest(config, base, {
+          method: "POST",
+          body: JSON.stringify({ name }),
+        });
+      } catch (error) {
+        // Notify currently creates only free families; existing teams keep working.
+        if (
+          error instanceof RequestError &&
+          (error.status === 403 || error.status === 400) &&
+          !Array.isArray(error.body?.required)
+        ) {
+          throw new RequestError(
+            `${error.message}. New workplace teams cannot be created at the moment; use notify families create "${name}" for a free family.`,
+            error.status,
+            error.body,
+          );
+        }
+        throw error;
+      }
     }
     case "get":
       return scopedRequest(config, teamPath());
@@ -68,6 +111,12 @@ export async function teamsCommand(config, args, options) {
     }
     case "invites":
       return scopedRequest(config, `${teamPath()}/invites`);
+    case "apps":
+      return scopedRequest(config, `${teamPath()}/apps`);
+    case "devices":
+      return scopedRequest(config, `${teamPath()}/devices`);
+    case "audit":
+      return auditCommand(config, teamPath(), options);
     case "revoke-invite": {
       const [inviteId] = rest;
       if (!inviteId) throw new UsageError("teams revoke-invite requires <team_id> <invite_id>");
@@ -129,12 +178,9 @@ export async function teamsCommand(config, args, options) {
 
 export async function handleTeams(context) {
   const { positionals, options, config } = context;
-  {
-    return {
-      body: await teamsCommand(config, positionals.slice(1), options),
-      exitCode: 0,
-    };
+  const body = await teamsCommand(config, positionals.slice(1), options);
+  if (body && Object.hasOwn(body, RAW_OUTPUT)) {
+    return { body: {}, output: body[RAW_OUTPUT].replace(/\n$/, ""), exitCode: 0 };
   }
-
-  throw new UsageError("Unknown command. Run notify --help.");
+  return { body, exitCode: 0 };
 }

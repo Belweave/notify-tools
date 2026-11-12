@@ -4,7 +4,7 @@ import { parseDuration } from "../foundation/arguments.mjs";
 import { UsageError } from "../foundation/errors.mjs";
 import { readStdinJson } from "../foundation/input.mjs";
 import { dispatchExitCode } from "../foundation/results.mjs";
-import { request, scopedRequest } from "../foundation/transport.mjs";
+import { idempotencyHeaders, request, scopedRequest } from "../foundation/transport.mjs";
 import {
   designFromOptions,
   readDesignFile,
@@ -53,7 +53,7 @@ export async function handleActivity(context) {
     };
   }
   if (action === "start") {
-    const stdin = options.stdin ? await readStdinJson() : {};
+    const stdin = options.stdin ? await readStdinJson(context.runtime?.stdin) : {};
     const progress = options.progress === undefined ? stdin.progress : Number(options.progress);
     if (progress !== undefined && (!Number.isFinite(progress) || progress < 0 || progress > 1)) {
       throw new UsageError("--progress must be a number from 0 to 1");
@@ -87,9 +87,7 @@ export async function handleActivity(context) {
     };
     const body = await request(config, "/api/agent/activities", {
       method: "POST",
-      headers: options["idempotency-key"]
-        ? { "Idempotency-Key": options["idempotency-key"] }
-        : undefined,
+      headers: idempotencyHeaders(options),
       body: JSON.stringify(payload),
     });
     return { body, exitCode: dispatchExitCode(body) };
@@ -97,7 +95,7 @@ export async function handleActivity(context) {
   if (action === "update") {
     const identifier = id ?? options.key;
     if (!identifier) throw new UsageError("activity update requires an activity ID or --key");
-    const stdin = options.stdin ? await readStdinJson() : {};
+    const stdin = options.stdin ? await readStdinJson(context.runtime?.stdin) : {};
     const progress = options.progress === undefined ? stdin.progress : Number(options.progress);
     if (
       progress !== undefined &&
@@ -142,9 +140,7 @@ export async function handleActivity(context) {
     };
     const body = await request(config, `/api/agent/activities/${encodeURIComponent(identifier)}`, {
       method: "PATCH",
-      headers: options["idempotency-key"]
-        ? { "Idempotency-Key": options["idempotency-key"] }
-        : undefined,
+      headers: idempotencyHeaders(options),
       body: JSON.stringify(payload),
     });
     return { body, exitCode: dispatchExitCode(body) };
@@ -152,7 +148,7 @@ export async function handleActivity(context) {
   if (action === "end") {
     const identifier = id ?? options.key;
     if (!identifier) throw new UsageError("activity end requires an activity ID or --key");
-    const stdin = options.stdin ? await readStdinJson() : {};
+    const stdin = options.stdin ? await readStdinJson(context.runtime?.stdin) : {};
     if (Object.hasOwn(stdin, "design")) throw new UsageError("design applies only to activity start/update");
     const ifSequence =
       options["if-sequence"] === undefined
@@ -184,9 +180,7 @@ export async function handleActivity(context) {
       `/api/agent/activities/${encodeURIComponent(identifier)}/end`,
       {
         method: "POST",
-        headers: options["idempotency-key"]
-          ? { "Idempotency-Key": options["idempotency-key"] }
-          : undefined,
+        headers: idempotencyHeaders(options),
         body: JSON.stringify(payload),
       },
     );

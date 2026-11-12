@@ -2,7 +2,7 @@
 
 ## Availability
 
-These design-file commands and `sdk/activity-design.mjs` require Notify Tools 0.13.0 or newer; 0.12.2 does not include them. Check the installed CLI help and deployed API schema before use. Phone rendering also requires an app build with design support. Local validation proves configuration validity, not production deployment, device support, delivery, or visibility. Existing style, symbol, color, and content fields remain the compatible route on older installations.
+Design files work with Notify Tools 0.13.0 and newer and need a phone app build with design support (iOS 1.5.5 or newer). Local validation proves the file is valid, not that a phone shows it. Plain `--style`, `--symbol` and `--accent-color` remain the compatible route.
 
 ## Choose by intent
 
@@ -20,7 +20,7 @@ These design-file commands and `sdk/activity-design.mjs` require Notify Tools 0.
 
 The first five templates are progress surfaces; the last four are interactive asks requiring `--live-activity` with approval or yes/no. Text replies use ordinary prompts. A template supplies presentation, not progress data or authorization.
 
-Write for a glance: title identifies the job, status names the current stage, subtitle gives a useful metric, detail explains a next action or consequence. Prefer “Uploading 3 of 5 files” to “Processing…” when measured. Omit progress when its denominator is unknown; never animate fabricated percentages. Use one recognizable symbol and a restrained accent. Keep sensitive context behind `--privacy private` and avoid secrets entirely. System appearance and comfortable density are sensible defaults; choose compact only for concise technical content. Update on meaningful transitions, and end with a clear result or failure and next action. See [delivery and pacing](delivery.md) when timing matters.
+Write for a glance: title identifies the job, status names the current stage, subtitle gives a useful metric, detail explains a next action or consequence. Prefer “Uploading 3 of 5 files” to “Processing…” when measured. Omit progress when its denominator is unknown; never animate fabricated percentages. Use one recognizable symbol and a restrained accent. Keep sensitive context behind `--privacy private` and avoid secrets entirely. System appearance and comfortable density are sensible defaults; choose compact only for concise technical content. Update on meaningful transitions, and end with a clear result or failure and next action. See [progress](progress.md) for pacing and [troubleshooting](troubleshooting.md) when a card does not appear.
 
 ## Generate and use a configuration
 
@@ -32,7 +32,13 @@ notify activity design ring --json > activity-design.json
 notify activity validate-design activity-design.json
 ```
 
-For an authorized job, pass the validated file to `activity start` or `activity update` with `--design-file activity-design.json`; an interactive `send ask` also needs `--live-activity`. Structured `--stdin` payloads may carry `design` directly. Files are limited to 16 KiB. Validate locally before a real send; these discovery commands need no account or phone.
+Pass the validated file to `activity start` or `activity update` with `--design-file`; an interactive `send ask` also needs `--live-activity`:
+
+```sh
+notify activity start --key backup-7 --title "Backup" --status "Copying" --progress 0.2 --design-file activity-design.json
+notify send ask "Approve the restore of backup 7?" --approval --live-activity --design-file approval.json --wait --timeout 10m
+```
+ Structured `--stdin` payloads may carry `design` directly. Files are limited to 16 KiB. Validate locally before a real send; these discovery commands need no account or phone.
 
 Canonical shape (only `version` is required):
 
