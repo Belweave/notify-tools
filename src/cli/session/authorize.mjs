@@ -69,12 +69,20 @@ export async function login(options, env, runtime) {
     } catch (error) {
       if (
         error instanceof RequestError &&
-        ["authorization_pending", "slow_down"].includes(error.body?.error)
+        ["authorization_pending", "slow_down", "rate_limited"].includes(error.body?.error)
       ) {
+        // rate_limited (429) backs off like slow_down instead of abandoning the login.
         interval =
           Number(error.body?.interval) ||
-          (error.body?.error === "slow_down" ? interval + 5 : interval);
+          (error.body?.error === "authorization_pending" ? interval : interval + 5);
         continue;
+      }
+      if (error instanceof RequestError && error.body?.error === "token_limit_reached") {
+        throw new RequestError(
+          "This account has reached its API token limit. Revoke an unused token (notify tokens list / revoke, or the dashboard) and sign in again.",
+          error.status,
+          error.body,
+        );
       }
       throw error;
     }

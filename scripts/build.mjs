@@ -41,7 +41,7 @@ outputs.push(
     platform: "node",
     entryPoints: { notify: "bin/notify.mjs" },
     outdir: "dist/cli",
-    define: { NOTIFY_BUNDLED_CLI: "true" },
+    define: { NOTIFY_BUNDLED_CLI: "true", NOTIFY_TOOLS_VERSION: JSON.stringify(pkg.version) },
   }),
 );
 outputs.push(
