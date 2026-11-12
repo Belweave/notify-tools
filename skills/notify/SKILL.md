@@ -16,7 +16,7 @@ They share one API, scopes and limits. Run `notify doctor` first if anything fai
 
 In Hermes Agent with the `hermes-notify` plugin loaded, use its tools (`notify_send`,
 `notify_ask`, `notify_progress`, `notify_replies`, `notify_cancel`) instead of the
-CLI or MCP for the same jobs, so the two never compete; the rules below still apply.
+CLI or MCP for the jobs they cover, so the two never compete; the rules below still apply.
 
 ## Pick the one right call
 
