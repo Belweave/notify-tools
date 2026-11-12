@@ -31,6 +31,9 @@ Agent skills
 Documentation
 - The README is now a quick start. Connector, microAuth/mini-app and Live Activity/MCP reference material moved unchanged into `docs/`.
 
+Development
+- Update the development tools vitest to 4.1.12 and esbuild to 0.28.1 for their published security fixes (test mock redirects, development server). Release bundles are unchanged in content.
+
 Compatibility: no command, flag or JSON success output was removed. Scripts that matched the old single-line error text on stderr now also see a `hint:` line.
 
 # Notify Tools 0.14.2
