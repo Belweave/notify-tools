@@ -1,3 +1,9 @@
+# Notify Tools 0.15.1 (unreleased)
+
+- `notify skills install|status|uninstall --agent hermes` installs the agent skills for Hermes Agent in `$HERMES_HOME/skills` (default `~/.hermes/skills`); `--profile NAME` targets `profiles/NAME/skills`. `--agent all` and detection now include Hermes Agent.
+- The skills installer never follows or replaces a symbolic link, for any host: a linked skills folder or skill folder is reported with its target and left unchanged. A folder it did not install is reported with how to proceed.
+- The `notify` skill tells Hermes Agent to use the `hermes-notify` plugin's tools (`notify_send`, `notify_ask`, `notify_progress`, `notify_replies`, `notify_cancel`) when that plugin is loaded, instead of the CLI or MCP. The skill test checks those names against a pinned list.
+
 # Notify Tools 0.15.0
 
 Added

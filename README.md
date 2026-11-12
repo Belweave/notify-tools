@@ -11,11 +11,11 @@ Needs Node.js 22.23.4+, 24.22.1+ or 26.12.1+ and the Notify app on your phone,
 signed in with notifications allowed.
 
 ```sh
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.15.0/notify-tools-0.15.0.tar.gz
-curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.15.0/SHA256SUMS
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.15.1/notify-tools-0.15.1.tar.gz
+curl -fLO https://notify.belweave.ai/downloads/notify-tools/v0.15.1/SHA256SUMS
 shasum -a 256 -c SHA256SUMS
-mkdir notify-tools-0.15.0 && tar -xzf notify-tools-0.15.0.tar.gz -C notify-tools-0.15.0
-node notify-tools-0.15.0/install.mjs
+mkdir notify-tools-0.15.1 && tar -xzf notify-tools-0.15.1.tar.gz -C notify-tools-0.15.1
+node notify-tools-0.15.1/install.mjs
 export PATH="$HOME/.local/bin:$PATH"
 ```
 
@@ -67,7 +67,7 @@ Two portable skills teach an agent to use Notify: [`notify`](skills/notify/SKILL
 for day-to-day use (tell, ask, progress, paging, teams) and
 [`notify-integrations`](skills/notify-integrations/SKILL.md) for building receivers,
 connectors, microAuth sign-in, mini apps and permission hooks. Install or update
-them for Claude Code, Codex or OpenCode with the CLI, versioned with it:
+them for Claude Code, Codex, OpenCode or Hermes Agent with the CLI, versioned with it:
 
 ```sh
 notify skills install --agent claude
@@ -76,6 +76,8 @@ notify skills uninstall --agent claude
 ```
 
 `--agent all` covers every supported host and `--dir DIR` any other location.
+For Hermes Agent, `--agent hermes` follows `HERMES_HOME` (default `~/.hermes`) and
+`--profile NAME` targets a named profile.
 Without `--agent`, it installs for the hosts it finds on this machine. Only
 directories it installed are ever replaced or removed.
 
