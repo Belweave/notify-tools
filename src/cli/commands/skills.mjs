@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: Apache-2.0
-import { lstat, mkdir, readFile, readdir, rename, rm, writeFile, copyFile } from "node:fs/promises";
+import { lstat, mkdir, readFile, readdir, readlink, rename, rm, writeFile, copyFile } from "node:fs/promises";
 import { homedir } from "node:os";
 import { dirname, join, relative, resolve, sep } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -15,11 +15,19 @@ export function skillsSource() {
 }
 
 const MARKER = ".notify-tools.json";
-export const AGENTS = ["claude", "codex", "opencode"];
+export const AGENTS = ["claude", "codex", "opencode", "hermes"];
+
+const PROFILE = /^[A-Za-z0-9][A-Za-z0-9._-]{0,63}$/;
+
+/** Hermes Agent's home: HERMES_HOME, or ~/.hermes. */
+function hermesHome(env, home) {
+  return env.HERMES_HOME ? resolve(env.HERMES_HOME) : join(home, ".hermes");
+}
 
 /** Where each agent host reads user-level skills. */
-export function agentSkillRoots(env = process.env) {
+export function agentSkillRoots(env = process.env, options = {}) {
   const home = env.HOME ?? homedir();
+  const hermes = hermesHome(env, home);
   return {
     claude: join(env.CLAUDE_CONFIG_DIR ?? join(home, ".claude"), "skills"),
     codex: join(env.CODEX_HOME ?? join(home, ".codex"), "skills"),
@@ -27,6 +35,8 @@ export function agentSkillRoots(env = process.env) {
     // folder name itself is unconfirmed for every OpenCode version: see
     // opencodeNote(), which every OpenCode install result carries.
     opencode: join(home, ".config", "opencode", "skill"),
+    // Hermes reads $HERMES_HOME/skills/<name>/SKILL.md; a named profile has its own.
+    hermes: options.profile ? join(hermes, "profiles", options.profile, "skills") : join(hermes, "skills"),
   };
 }
 
@@ -69,6 +79,21 @@ export async function skillFiles(skillDirectory) {
   return [...visited].map((file) => relative(root, file)).sort();
 }
 
+/** A symbolic link at `path`, with its target, or undefined. Links are never followed. */
+async function symlinkAt(path) {
+  try {
+    const info = await lstat(path);
+    return info.isSymbolicLink() ? { target: await readlink(path) } : undefined;
+  } catch (error) {
+    if (error?.code === "ENOENT") return undefined;
+    throw error;
+  }
+}
+
+function linkReason(path, target) {
+  return `${path} is a symbolic link to ${target}. Notify Tools never follows or replaces links: remove or repoint the link yourself, or install somewhere else with --dir.`;
+}
+
 async function readMarker(directory) {
   try {
     return JSON.parse(await readFile(join(directory, MARKER), "utf8"));
@@ -81,8 +106,17 @@ async function readMarker(directory) {
 
 function selectTargets(options, env) {
   if (options.dir && options.agent) throw new UsageError("Use either --agent or --dir, not both");
+  if (options.profile !== undefined) {
+    if (!PROFILE.test(options.profile) || options.profile.includes("..")) {
+      throw new UsageError("--profile must be a Hermes profile name (letters, digits, '.', '_' or '-')");
+    }
+    const agents = String(options.agent ?? "").split(",").map((agent) => agent.trim());
+    if (!agents.includes("hermes") && !agents.includes("all")) {
+      throw new UsageError("--profile applies to Hermes Agent: use it with --agent hermes (or all)");
+    }
+  }
   if (options.dir) return [{ agent: "dir", root: resolve(options.dir) }];
-  const roots = agentSkillRoots(env);
+  const roots = agentSkillRoots(env, options);
   const requested = options.agent ?? "detected";
   if (requested === "all") return AGENTS.map((agent) => ({ agent, root: roots[agent] }));
   if (requested === "detected") return undefined;
@@ -116,8 +150,9 @@ export async function skillStatus({ env = process.env, options = {} } = {}) {
   for (const { agent, root } of targets) {
     for (const name of names) {
       const directory = join(root, name);
+      const link = (await symlinkAt(root)) ?? (await symlinkAt(directory));
       const present = await exists(directory);
-      const marker = present ? await readMarker(directory) : undefined;
+      const marker = present && !link ? await readMarker(directory) : undefined;
       result.push({
         agent,
         skill: name,
@@ -125,19 +160,37 @@ export async function skillStatus({ env = process.env, options = {} } = {}) {
         installed: present,
         managed: Boolean(marker && !marker.invalid),
         version: marker?.version ?? null,
+        ...(link ? { symlink: link.target } : {}),
       });
     }
   }
   return result;
 }
 
+/** A skipped result when the skills folder or the skill folder is a link. */
+async function refuseLinks(name, root) {
+  const to = join(root, name);
+  for (const path of [root, to]) {
+    const link = await symlinkAt(path);
+    if (link) return { skill: name, path: to, action: "skipped", reason: linkReason(path, link.target) };
+  }
+  return undefined;
+}
+
 async function installOne(source, name, root, dryRun) {
   const from = join(source, name);
   const to = join(root, name);
+  const refused = await refuseLinks(name, root);
+  if (refused) return refused;
   const present = await exists(to);
   const marker = present ? await readMarker(to) : undefined;
   if (present && (!marker || marker.invalid || marker.name !== name)) {
-    return { skill: name, path: to, action: "skipped", reason: "An unmanaged directory already exists; move it away to install" };
+    return {
+      skill: name,
+      path: to,
+      action: "skipped",
+      reason: `${to} already exists and was not installed by Notify Tools. Move it away (or delete it if it is an old copy) and run the command again, or install somewhere else with --dir.`,
+    };
   }
   const files = await skillFiles(from);
   const action = present ? (marker.version === VERSION ? "reinstalled" : "updated") : "installed";
@@ -168,6 +221,8 @@ async function installOne(source, name, root, dryRun) {
 
 async function uninstallOne(name, root, dryRun) {
   const to = join(root, name);
+  const refused = await refuseLinks(name, root);
+  if (refused) return refused;
   if (!(await exists(to))) return { skill: name, path: to, action: "absent" };
   const marker = await readMarker(to);
   if (!marker || marker.invalid || marker.name !== name) {
@@ -180,7 +235,7 @@ async function uninstallOne(name, root, dryRun) {
 
 export async function handleSkills({ action, options, env, runtime }) {
   if (!["install", "uninstall", "status"].includes(action ?? "")) {
-    throw new UsageError("Usage: notify skills install|uninstall|status [--agent claude|codex|opencode|all] [--dir DIR] [--dry-run]");
+    throw new UsageError("Usage: notify skills install|uninstall|status [--agent claude|codex|opencode|hermes|all] [--profile NAME] [--dir DIR] [--dry-run]");
   }
   if (action === "status") return { body: { version: VERSION, skills: await skillStatus({ env, options }) }, exitCode: 0 };
   const source = skillsSource();
@@ -190,7 +245,7 @@ export async function handleSkills({ action, options, env, runtime }) {
     targets = await detectedTargets(env);
     if (targets.length === 0) {
       throw new UsageError(
-        "No agent configuration found (~/.claude, ~/.codex, ~/.config/opencode). Name one with --agent claude|codex|opencode|all, or use --dir DIR.",
+        "No agent configuration found (~/.claude, ~/.codex, ~/.config/opencode, ~/.hermes or HERMES_HOME). Name one with --agent claude|codex|opencode|hermes|all, or use --dir DIR.",
       );
     }
   }

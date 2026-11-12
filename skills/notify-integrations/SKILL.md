@@ -3,7 +3,7 @@ name: notify-integrations
 description: Build software that integrates with Notify. Use when writing or debugging a receiver for Notify answers (reply webhooks or per-question callbacks and their signatures), publishing a private or local web service to phones with notify connect or the connector SDK, adding microAuth phone sign-in to a website, packaging a personal mini app, or routing Claude Code, Codex or OpenCode permission requests to a phone. For sending notifications, asking for decisions, progress, paging or account management, use the notify skill instead.
 license: Apache-2.0
 metadata:
-  compatible-cli: "0.15.0"
+  compatible-cli: "0.15.1"
 ---
 
 # Notify integrations

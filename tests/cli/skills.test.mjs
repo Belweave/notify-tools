@@ -19,6 +19,8 @@ const root = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const skillsRoot = join(root, "skills");
 const packageJson = JSON.parse(await readFile(join(root, "package.json"), "utf8"));
 const api = JSON.parse(await readFile(join(root, "tests", "fixtures", "agent-api.json"), "utf8"));
+// Tool names from the separate hermes-notify plugin, pinned with their source.
+const hermesTools = JSON.parse(await readFile(join(root, "tests", "fixtures", "hermes-notify-tools.json"), "utf8")).tools;
 
 const operations = Object.entries(api.operations).map(([key, spec]) => {
   const [method, template] = key.split(" ");
@@ -295,6 +297,9 @@ test("every command, flag, tool, route and example in the skills is real", async
         if (/[<>]|\.\.\./.test(span) && /<command>/.test(span)) continue;
         checkFlags(shellTokens(span).filter((token) => token.word !== undefined).map((token) => token.word).slice(1), `${where} inline`);
       }
+      for (const [, tool] of content.matchAll(/`(notify_[a-z_]+)`/g)) {
+        assert.ok(hermesTools.includes(tool), `${where}: ${tool} is not a pinned hermes-notify plugin tool`);
+      }
       for (const [, tool] of content.matchAll(/`([a-z]+(?:_[a-z]+)+)`/g)) {
         if (tool.includes("_") && /^(activities|apps|auth|billing|connectors|devices|events|groups|inbox|interactions|mini_apps|oncall|pages|services|teams|tokens|webhooks)_/.test(tool)) {
           assert.ok(api.mcpTools[tool], `${where}: MCP tool ${tool} is not in production`);
@@ -340,4 +345,10 @@ test("every command, flag, tool, route and example in the skills is real", async
     await rm(workspace, { recursive: true, force: true });
   }
   assert.deepEqual(failures, []);
+});
+
+test("the notify skill defers to the hermes-notify plugin tools when they are loaded", async () => {
+  const skill = await readFile(join(skillsRoot, "notify", "SKILL.md"), "utf8");
+  assert.match(skill, /`hermes-notify` plugin/);
+  for (const tool of hermesTools) assert.ok(skill.includes(`\`${tool}\``), `notify skill names ${tool}`);
 });

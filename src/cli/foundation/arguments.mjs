@@ -76,6 +76,7 @@ const valueFlags = new Set([
     "agent",
     "dir",
     "escalation",
+    "profile",
     "format",
     "action",
     "actor",
