@@ -346,6 +346,14 @@ test("skills install, update and uninstall only touch managed directories", asyn
     assert.ok(removed.body.results.every((entry) => entry.action === "removed"));
     assert.deepEqual(await readdir(join(home, ".claude", "skills")), []);
     await assert.rejects(execute(["skills", "install", "--agent", "cursor"], env), /--agent must be/);
+
+    const notes = [];
+    const opencode = await execute(["skills", "install", "--agent", "opencode"], env, { stderr: (line) => notes.push(line) });
+    const target = join(home, ".config", "opencode", "skill", "notify");
+    assert.equal(opencode.body.results[0].path, target);
+    assert.match(opencode.body.results[0].note, /could not be confirmed/);
+    assert.ok(opencode.body.results[0].note.includes(`mv "${target}"`));
+    assert.equal(notes.length, 2);
   } finally {
     await rm(home, { recursive: true, force: true });
   }

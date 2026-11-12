@@ -9,7 +9,7 @@ Added
 - `notify oncall delete ID`, and `--escalation 10:next,30:group` / `--no-escalation` on `oncall create|update`.
 - `notify webhooks create|update --default|--no-default --events ...` for account-default reply webhooks and their event subscriptions.
 - `notify mini-apps archive ID --output FILE` writes the exact published bytes after checking them against the package ID.
-- `notify skills install|status|uninstall [--agent claude|codex|opencode|all] [--dir DIR] [--dry-run]` installs the agent skills that ship with this release; it only replaces or removes directories it installed.
+- `notify skills install|status|uninstall [--agent claude|codex|opencode|all] [--dir DIR] [--dry-run]` installs the agent skills that ship with this release; it only replaces or removes directories it installed. OpenCode installs go to `~/.config/opencode/skill` and say where they went and how to move them, because that folder is not confirmed for every OpenCode version.
 - `notify version` / `--version`, `notify completion bash|zsh`, and `notify help exit-codes`.
 - `notify send -` and `notify send ask -` read the body or prompt from stdin.
 - SDK: `verifyReplyWebhookSignature` and `signReplyWebhook` check `X-Notify-Signature: t=…,v1=…` reply-webhook deliveries against the raw body.

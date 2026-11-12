@@ -23,7 +23,10 @@ export function agentSkillRoots(env = process.env) {
   return {
     claude: join(env.CLAUDE_CONFIG_DIR ?? join(home, ".claude"), "skills"),
     codex: join(env.CODEX_HOME ?? join(home, ".codex"), "skills"),
-    opencode: join(env.XDG_CONFIG_HOME ?? join(home, ".config"), "opencode", "skill"),
+    // Same configuration root as the OpenCode permission plugin. The skill
+    // folder name itself is unconfirmed for every OpenCode version: see
+    // OPENCODE_NOTE, which every OpenCode result carries.
+    opencode: join(home, ".config", "opencode", "skill"),
   };
 }
 
@@ -88,6 +91,11 @@ function selectTargets(options, env) {
     if (!AGENTS.includes(agent)) throw new UsageError(`--agent must be ${AGENTS.join(", ")} or all`);
   }
   return agents.map((agent) => ({ agent, root: roots[agent] }));
+}
+
+/** Where an OpenCode install went and how to move it if OpenCode does not list it. */
+export function opencodeNote(path) {
+  return `OpenCode's skill folder could not be confirmed for every OpenCode version. Installed at ${path}. If OpenCode does not list this skill, move it to the folder your OpenCode version reads skills from (mv "${path}" "<that folder>/"), then update it later with notify skills install --dir "<that folder>".`;
 }
 
 /** Agents whose configuration directory already exists on this machine. */
@@ -170,7 +178,7 @@ async function uninstallOne(name, root, dryRun) {
   return { skill: name, path: to, action: "removed" };
 }
 
-export async function handleSkills({ action, options, env }) {
+export async function handleSkills({ action, options, env, runtime }) {
   if (!["install", "uninstall", "status"].includes(action ?? "")) {
     throw new UsageError("Usage: notify skills install|uninstall|status [--agent claude|codex|opencode|all] [--dir DIR] [--dry-run]");
   }
@@ -193,9 +201,11 @@ export async function handleSkills({ action, options, env }) {
         action === "install"
           ? await installOne(source, name, root, Boolean(options["dry-run"]))
           : await uninstallOne(name, root, Boolean(options["dry-run"]));
-      results.push({ agent, ...outcome });
+      const moved = agent === "opencode" && action === "install" && !String(outcome.action).startsWith("skipped");
+      results.push({ agent, ...outcome, ...(moved ? { note: opencodeNote(outcome.path) } : {}) });
     }
   }
+  for (const entry of results) if (entry.note) runtime?.stderr?.(entry.note);
   const skipped = results.some((entry) => entry.action === "skipped");
   return { body: { version: VERSION, results }, exitCode: skipped ? 1 : 0 };
 }

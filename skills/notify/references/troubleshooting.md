@@ -19,6 +19,7 @@ notify doctor --json
 | HTTP 409 (exit 1) on retry | Same `--idempotency-key` with different content | Use a new key for a new event |
 | Exit 6 | Network, proxy or wrong `NOTIFY_API_URL` | Unset `NOTIFY_API_URL` for production; check connectivity |
 | `teams create` fails | New workplace teams are unavailable | `notify families create NAME`, or use an existing team |
+| OpenCode does not list the Notify skills | Its skill folder differs by version; `notify skills install --agent opencode` uses `~/.config/opencode/skill` | Move the folders it names to the folder your OpenCode reads, then update with `notify skills install --dir <that folder>` |
 | Unsupported Node.js | Old or odd-numbered Node | Install Node 22.23.4+, 24.22.1+ or 26.12.1+ |
 
 ## A Live Activity does not appear
