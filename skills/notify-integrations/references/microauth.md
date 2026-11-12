@@ -3,7 +3,7 @@
 Any HTTPS site opens in Notify without code. Add microAuth when the site needs
 to know who is signed in: the browser asks your server for a challenge, the phone
 asks the person to approve sign-in (and any profile fields), and your server
-verifies the signed answer before starting its own session.
+verifies the signed pass before starting its own session.
 
 Register the site first (`notify apps create --name "Release dashboard" --url https://dashboard.example.com --json`)
 and keep the returned app ID in your server configuration.
