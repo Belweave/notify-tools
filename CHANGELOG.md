@@ -1,4 +1,4 @@
-# Notify Tools 0.15.0 (unreleased)
+# Notify Tools 0.15.0
 
 Added
 - `notify doctor` checks Node, credentials, API reachability, scopes, token expiry, registered phones and installed skills without printing secrets. `--json` gives a stable report.
