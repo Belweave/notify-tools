@@ -358,3 +358,70 @@ test("skills install, update and uninstall only touch managed directories", asyn
     await rm(home, { recursive: true, force: true });
   }
 });
+
+test("Hermes Agent skills honour HERMES_HOME and profiles, and never touch links", async () => {
+  const { symlink, lstat, readlink } = await import("node:fs/promises");
+  const home = await mkdtemp(join(tmpdir(), "notify-hermes-"));
+  const env = { HOME: home };
+  try {
+    // Default home ~/.hermes; detected without --agent when it exists.
+    await mkdir(join(home, ".hermes"));
+    const detected = await execute(["skills", "install"], env);
+    assert.deepEqual(detected.body.results.map((entry) => `${entry.agent}:${entry.path}`), [
+      `hermes:${join(home, ".hermes", "skills", "notify")}`,
+      `hermes:${join(home, ".hermes", "skills", "notify-integrations")}`,
+    ]);
+    assert.ok((await readFile(join(home, ".hermes", "skills", "notify", "SKILL.md"), "utf8")).startsWith("---\nname: notify\n"));
+
+    // A named profile, and HERMES_HOME.
+    const profile = await execute(["skills", "install", "--agent", "hermes", "--profile", "work"], env);
+    assert.equal(profile.body.results[0].path, join(home, ".hermes", "profiles", "work", "skills", "notify"));
+    const custom = join(home, "hermes-elsewhere");
+    const relocated = await execute(["skills", "install", "--agent", "hermes"], { ...env, HERMES_HOME: custom });
+    assert.equal(relocated.body.results[0].path, join(custom, "skills", "notify"));
+    await assert.rejects(execute(["skills", "install", "--agent", "claude", "--profile", "work"], env), /--profile applies to Hermes/);
+    await assert.rejects(execute(["skills", "install", "--agent", "hermes", "--profile", "../x"], env), /--profile must be/);
+
+    // A symlinked skill folder (as when ~/.hermes/skills links into another tree) is reported, not followed.
+    const shared = join(home, ".agents", "skills", "notify");
+    await mkdir(shared, { recursive: true });
+    await writeFile(join(shared, "SKILL.md"), "shared copy");
+    const linkRoot = join(home, "linked-home");
+    await mkdir(join(linkRoot, "skills"), { recursive: true });
+    await symlink(shared, join(linkRoot, "skills", "notify"));
+    const hermesEnv = { ...env, HERMES_HOME: linkRoot };
+    const refused = await execute(["skills", "install", "--agent", "hermes"], hermesEnv);
+    assert.equal(refused.exitCode, 1);
+    assert.equal(refused.body.results[0].action, "skipped");
+    assert.match(refused.body.results[0].reason, /symbolic link to .*never follows or replaces links/);
+    assert.equal(refused.body.results[1].action, "installed");
+    assert.ok((await lstat(join(linkRoot, "skills", "notify"))).isSymbolicLink());
+    assert.equal(await readlink(join(linkRoot, "skills", "notify")), shared);
+    assert.equal(await readFile(join(shared, "SKILL.md"), "utf8"), "shared copy");
+    const removal = await execute(["skills", "uninstall", "--agent", "hermes"], hermesEnv);
+    assert.equal(removal.body.results[0].action, "skipped");
+    assert.equal(removal.body.results[1].action, "removed");
+    assert.equal(await readFile(join(shared, "SKILL.md"), "utf8"), "shared copy");
+    const status = await execute(["skills", "status", "--agent", "hermes"], hermesEnv);
+    assert.equal(status.body.skills[0].symlink, shared);
+
+    // A whole skills folder that is a link is refused too.
+    const linkedSkills = join(home, "linked-skills-home");
+    await mkdir(linkedSkills);
+    await symlink(join(home, ".agents", "skills"), join(linkedSkills, "skills"));
+    const wholeLink = await execute(["skills", "install", "--agent", "hermes"], { ...env, HERMES_HOME: linkedSkills });
+    assert.ok(wholeLink.body.results.every((entry) => entry.action === "skipped"));
+
+    // An unmanaged real folder says what is there and how to proceed.
+    const plain = join(home, "plain-home");
+    await mkdir(join(plain, "skills", "notify"), { recursive: true });
+    const unmanaged = await execute(["skills", "install", "--agent", "hermes"], { ...env, HERMES_HOME: plain });
+    assert.match(unmanaged.body.results[0].reason, /was not installed by Notify Tools\. Move it away/);
+
+    // --agent all includes Hermes.
+    const all = await execute(["skills", "install", "--agent", "all", "--dry-run"], env);
+    assert.ok(all.body.results.some((entry) => entry.agent === "hermes"));
+  } finally {
+    await rm(home, { recursive: true, force: true });
+  }
+});
